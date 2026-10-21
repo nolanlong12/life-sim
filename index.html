@@ -382,6 +382,7 @@ h1,h2,h3,h4{font-weight:600;letter-spacing:.005em}
 .dock{padding:0;background:transparent;border:0;box-shadow:none}
 .dock-in{max-width:680px}
 .bars{background:var(--card);border-top:1px solid var(--line);padding:8px 14px 34px;display:flex;flex-direction:column;gap:5px;border-radius:20px 20px 0 0;box-shadow:0 -8px 24px rgba(60,30,90,.08)}
+.recap{margin-top:8px;padding:10px 12px;border-radius:14px;background:var(--card);border:1px dashed var(--line)}.recap b{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.recap .chips{grid-column:auto}
 .backbar{padding:6px 12px 30px}.backlife{width:100%;display:flex;align-items:center;gap:8px;border:0;background:var(--violet-soft);color:var(--violet);font:inherit;font-weight:800;font-size:15px;padding:9px 14px;border-radius:14px;cursor:pointer}.backlife svg{width:18px;height:18px;flex:none}.backlife small{margin-left:auto;font-weight:700;opacity:.8;font-size:12.5px}
 .sbar{display:grid;grid-template-columns:104px minmax(0,1fr);align-items:center;gap:8px}
 .sb-n{display:flex;align-items:center;gap:6px;font:600 14px/1 var(--display);color:var(--ink)}.sb-n svg{width:16px;height:16px;color:var(--muted)}
@@ -1031,7 +1032,7 @@ const luckB=()=>(M().s.luck-50)/400+(hasT('lucky')?.05:0);
 const PV=k=>M().pers[k]??50;
 const idxVal=()=>S.inv.idx*S.econ.idx, cryVal=()=>S.inv.cry*S.econ.cry;
 const assetVal=()=>S.assets.reduce((t,a)=>t+a.value,0), bizVal=()=>S.biz.reduce((t,b)=>t+b.value,0);
-const netWorth=()=>S.me.cash+S.inv.sav+idxVal()+cryVal()+assetVal()+bizVal()-S.me.debt+(typeof reEquity==='function'?reEquity():0)+(S.builds||[]).reduce((t,b)=>t+b.cost*.85,0);
+const netWorth=()=>S.me.cash+S.inv.sav+idxVal()+cryVal()+assetVal()+bizVal()-S.me.debt+(typeof reEquity==='function'?reEquity():0)+(S.builds||[]).reduce((t,b)=>t+b.cost*.85,0)+(typeof v10Val==='function'?v10Val():0);
 const he=(p,a,b,c)=>p.g==='m'?a:p.g==='f'?b:(c||'them');
 const localLangs=()=>CLANG[city().c]||['English'];
 const speaksLocal=()=>localLangs().some(l=>M().langs.includes(l));
@@ -1658,7 +1659,7 @@ function ageUp(){const m=M();if(!m.alive){showDeath();return;}if(S.camp){showCam
   if(m.age===2)L(`Your first word was "${pick(['ball','no','dog','more','uh-oh','up'])}".`,'g');
   if(chapter(m.age)!==ch0)L(`A new chapter begins: ${chapter(m.age)}.`,'a');
   if(m.prison>0){m.prison--;if(!m.prison){L('You were released from prison. Time to rebuild.','g');sAdd('happy',10);}else L(`${plural(m.prison,'year')} left on your sentence.`,'b');}
-  S.done={};const LR=[];const T_=(l,f)=>ledgerTrack(LR,l,f);econTick();T_('Sports pay & sponsorships',()=>{sportTick();sportExtraTick();});schoolTick();T_('Salary',jobTick);T_('Coaching salary',coachTick);T_('Elected office salary',politicsTick);T_('Showbiz income',showbizTick);skillTick();T_('Business profits',bizTick);T_('Homes: rent, upkeep & staff',homesTick);T_('Cars, boats, aircraft & memberships',ridesTick);T_('Real estate company',empireTick);T_('Social media',socialTick);renownTick();T_('Living costs, allowance & pension',financeTick);healthTick();peopleTick();const LI=S.led.inc;
+  S.done={};const LR=[];const T_=(l,f)=>ledgerTrack(LR,l,f);econTick();T_('Sports pay & sponsorships',()=>{sportTick();sportExtraTick();});schoolTick();T_('Salary',jobTick);T_('Coaching salary',coachTick);T_('Elected office salary',politicsTick);T_('Showbiz income',showbizTick);skillTick();T_('Business profits',bizTick);T_('Homes: rent, upkeep & staff',homesTick);T_('Cars, boats, aircraft & memberships',ridesTick);T_('Real estate company',empireTick);T_('Social media',()=>{socialTick();rosterTick();});T_('Islands & resorts',islandTick);T_('Sports team',teamTick);T_('Company acquisitions',corpTick);T_('Museum',museumTick);T_('Personal staff',lifestyleTick);legendTick();renownTick();T_('Living costs, allowance & pension',financeTick);healthTick();peopleTick();const LI=S.led.inc;
   if(m.followers>0&&!(m.soc&&accs().length)){if((!m.job||!JOBS[m.job.id]||!(JOBS[m.job.id].fame||JOBS[m.job.id].special))&&!(m.sport&&m.sport.stage==='pro'))m.followers=Math.round(m.followers*rf(.88,1.02));}
   if(m.age>=18&&(S.led.inc||S.led.exp))L(`Earned ${money(S.led.inc)} · spent ${money(S.led.exp)} on living costs and upkeep.`,'m');
   {const oth=LR.filter(r=>r[0]==='__other');const keep=LR.filter(r=>r[0]!=='__other');const oi=oth.reduce((t,r)=>t+r[1],0),oe=oth.reduce((t,r)=>t+r[2],0);const net=oi-oe;if(Math.abs(net)>=1)keep.push(['__other',net>0?net:0,net<0?-net:0]);
@@ -4020,7 +4021,7 @@ function renderDock(){const m=M();const life=UI.view==='life'&&!UI.sub&&!UI.page
 function vLife(){if(UI.sub==='profile')return vProfile();if(UI.sub==='move')return vMove();const m=M();let h='';
   const n=UI.full?S.log.length:80;const ys=S.log.slice(-n);
   if(S.log.length>n)h+=`<div class="btnrow" style="justify-content:center">${B('Show earlier years','togglelog',{},{cls:'btn ghost'})}</div>`;
-  h+=`<section class="story">${ys.map((y,i)=>`<div class="sy${i===ys.length-1?' now':''}"><h4>Age: ${y.age} ${y.age===1?'year':'years'} <small>${y.year}</small></h4>${y.lines.map(l=>`<p class="${l.c}">${esc(l.t)}</p>`).join('')}</div>`).join('')}</section>`;
+  h+=`<section class="story">${ys.map((y,i)=>`<div class="sy${i===ys.length-1?' now':''}"><h4>Age: ${y.age} ${y.age===1?'year':'years'} <small>${y.year}</small></h4>${y.lines.map(l=>`<p class="${l.c}">${esc(l.t)}</p>`).join('')}${y.rc?recapHTML(y.rc):''}</div>`).join('')}</section>`;
   if(!m.alive)h+=card(`<h3>${esc(m.first)}'s story has ended</h3><p class="note">Tap Summary to continue the family line or start a new life.</p>`);
   return h;}
 function whatNext(){const m=M(),sp=m.sport,sc=m.school,out=[];const add=(...a)=>{if(out.length<4)out.push(a);};
@@ -4127,9 +4128,9 @@ function vAssets(){const m=M();const t=UI.asub||'overview';let h=crumb('Assets')
 H.asub=d=>{UI.asub=d.v;UI.page=null;UI.view='assets';render();window.scrollTo(0,0);};
 H.luxt=d=>{UI.asub='luxury';UI.lux=d.v;UI.view='assets';UI.page=null;render();};
 /* ---------- Business ---------- */
-function vBusiness(){const m=M();const t=UI.bt||'biz';let h=crumb('Business')+`<div class="pagehead"><h1>Business</h1><p class="muted">Start companies, buy them, build a real estate empire.</p></div>`+subTabs('bt',t,[['biz','Businesses'],['empire','Real estate company']]);
+function vBusiness(){const m=M();const t=UI.bt||'biz';let h=crumb('Business')+`<div class="pagehead"><h1>Business</h1><p class="muted">Start companies, buy them, build a real estate empire.</p></div>`+subTabs('bt',t,[['biz','Businesses'],['empire','Real estate'],['team','Sports team'],['corp','Takeovers']]);
   if(!m.alive)return h+card('<p class="empty">This life has ended.</p>');
-  return h+(t==='empire'?aEmpire():bizList());}
+  return h+(t==='empire'?aEmpire():t==='team'?teamView():t==='corp'?corpView():bizList());}
 H.bt=d=>{UI.bt=d.v;UI.page=null;render();};
 function bizList(){const m=M();let h='';
   h+=card(sh('Your businesses')+(S.biz.length?`<div class="list">${S.biz.map(b=>{const d=BIZDEF(b);if(!d)return '';const staffMax=b.loc*5;return `<div class="bizrow"><div class="row">${ich('briefcase','sun',1)}<div class="tx"><div class="t">${esc(b.name)}</div><div class="d">${d.n} · ${plural(b.loc,'location')} · ${plural(b.staff||0,'extra employee')} · worth ${money(b.value)} · last year ${b.last>=0?'+':''}${money(b.last||0)}<div class="req"><span class="${b.q<30?'no':''}">Quality ${b.q}</span></div></div></div></div>
@@ -4158,12 +4159,12 @@ function vActivitiesHub(){const m=M(),s=UI.sub;
   h+=localSpotsHTML();return h;}
 function vMore(){const s=UI.sub;const m=M();
   const back=x=>x.replace(/^<button class="back" data-a="go" data-v="(?:more|actions)" >/,'<button class="back" data-a="go" data-v="more" >');
-  if(s==='character')return back(vCharacter());if(s==='appearance')return back(vAppearance());if(s==='tree')return back(vTree());if(s==='ach')return back(vAch());if(s==='recap')return back(vRecap());if(s==='stats')return back(vStatsPage());if(s==='settings')return back(vSettings());if(s==='goals')return back(vGoals());
+  if(s==='character')return back(vCharacter());if(s==='appearance')return back(vAppearance());if(s==='tree')return back(vTree());if(s==='ach')return back(vAch());if(s==='recap')return back(vRecap());if(s==='stats')return back(vStatsPage());if(s==='records')return vRecords();if(s==='rich')return vRich();if(s==='settings')return back(vSettings());if(s==='goals')return back(vGoals());
   const [L_,R_]=navSlots();const all=['life','school','career','money','assets','business','people','activities'];
   return crumb('Menu')+`<div class="pagehead"><h1>Menu</h1></div>`+card(sh('Your life')+`<div class="grid2">${all.map(k=>tileBtn(k==='school'?slotIcon('school'):SECT[k][1],{life:'blue',school:'violet',career:'blue',money:'mint',assets:'sun',business:'violet',people:'coral',activities:'teal'}[k],k==='school'?schoolLabel():SECT[k][0],{life:'Your story',school:'Classes and school sports',career:'Jobs and pro sports',money:'Cash, income, debt',assets:'Homes, cars, yachts',business:'Companies and real estate',people:'Family and friends',activities:'Hobbies and travel'}[k],'go',{v:k})).join('')}</div>`)
    +card(`<div class="list">${[['user','blue','Character','Attributes, personality, talent','character'],['shirt','violet','Appearance & wardrobe','Hair, outfits, accessories','appearance'],['target','sun','Personal goals','What you’re working toward','goals'],
     ['tree','violet','Family tree','Generations of your family','tree'],['award','sun','Achievements',`${Object.keys(S.ach).length} of ${ACH.length} unlocked`,'ach'],['clock','blue','Life recap','Best and worst moments','recap'],
-    ['chart','teal','Statistics','Your life in numbers','stats'],['sliders','blue','Settings','Text size, motion, theme','settings']].map(([i,c,t,d,sub])=>row(ich(i,c),t,d,B(icon('right'),'go',{v:'more',s:sub},{lab:'Open '+t}))).join('')}
+    ['award','sun','Lifetime records','Family bests across generations','records'],['crown','sun','Rich list','Where you rank among the world’s richest','rich'],['chart','teal','Statistics','Your life in numbers','stats'],['sliders','blue','Settings','Text size, motion, theme','settings']].map(([i,c,t,d,sub])=>row(ich(i,c),t,d,B(icon('right'),'go',{v:'more',s:sub},{lab:'Open '+t}))).join('')}
     ${row(ich('users','teal'),'Saved lives','Switch between your lives',B(icon('right'),'lives',{},{lab:'Open saved lives'}))}${row(ich('refresh','coral'),'Start a new life','This life stays saved',B('New life','newlife',{},{cls:'btn danger'}))}</div>`);}
 /* motorcycles */
 CCLS.moto=['moto','moto',40,80,74,.12,.03,.04,700];CARCAT.moto='Motorcycles';
@@ -4812,6 +4813,293 @@ ev('soc_cancel',{min:16,w:.5,when:()=>hasSoc()&&socTotal()>=5e4&&SOC().rep<45,ti
   {l:'Let your publicist handle it',hide:()=>!SOC().staff.pr,fx:()=>{SOC().rep=clamp(SOC().rep+10);return ['Your publicist turned the story around.','g'];}},{l:'Go quiet for a while',fx:()=>{const s=SOC();s.deals.forEach(d=>d.done=0);accs().forEach(([,a])=>socAdd(a,-Math.round(a.f*.12)));return ['You lost followers and your sponsors paused deals.','b'];}}]});
 ev('soc_doc',{min:18,w:.4,when:()=>fame()>=60,title:'Documentary offer',text:()=>'A streaming service wants to make a documentary about your life.',
  choices:[{l:'Do it',fx:()=>{const m=M();const p=Math.round(rf(1e5,2e6)*(fame()/60));m.cash+=p;m.followers+=Math.round(m.followers*.06);m.renown=(m.renown||0)+2;return [`It premiered to big numbers. You were paid ${money(p)}.`,'g'];}},{l:'Keep your life private',fx:()=>{sAdd('happy',2);return ['You passed.','n'];}}]});
+
+/* =========================================================
+   v10: islands & resorts · team ownership · auctions · takeovers
+        rich list · records · lifestyle tiers · museum · recap
+   ========================================================= */
+const lmoney=n=>money(n);
+/* ---------- private islands ---------- */
+const ISL=[['frog','Frog Key','Florida Keys-ish',12,1.6e6,1],['pineknot','Pine Knot Island','Maine',60,2.8e6,0],['pequena','Isla Pequeña','Belize',25,3.5e6,1],['fjord','Fjordholm','Norway',90,6e6,0],
+ ['palmcay','Little Palm Cay','The Bahamas-ish',40,8e6,1],['whale','Whalebone Island','British Columbia-ish',800,22e6,0],['sardine','Sardine Isle','Greek-ish Mediterranean',120,35e6,0],['kaloa','Kaloa Rock','Hawaii-ish',300,60e6,1],
+ ['coral','Coral Crown Atoll','Maldives-ish',150,90e6,1],['neckless','Neckless Island','British Virgin-ish Islands',74,120e6,1],['mystique','Mystique Island','St. Vincent-ish',1400,250e6,1],['lanaii','Lanaii-ish','Hawaii-ish',90000,400e6,1]];
+// [key,name,cost,requires,minAcres,group]
+const IBLD=[['villa','Beach villa',3e6,'',0,'home'],['estate','Island estate',15e6,'villa',0,'home'],['palace','Island palace',60e6,'estate',30,'home'],
+ ['dock','Marina dock',1.5e6,'',0,'access'],['heli','Helipad',2e6,'',0,'access'],['air','Private airstrip',15e6,'',200,'access'],
+ ['lodge','Eco-lodge resort · 20 rooms',20e6,'',10,'resort'],['resort','Luxury resort · 120 rooms',120e6,'lodge',60,'resort'],['mega','Mega resort · 600 rooms',600e6,'resort',800,'resort']];
+const RTIER={lodge:[20,900],resort:[120,1500],mega:[600,800]};
+function ISLS(){S.isl=S.isl||{own:[],mkt:null};return S.isl;}
+function islMarket(){const I=ISLS();if(!I.mkt||I.mkt.y!==S.year){const owned=I.own.map(o=>o.k);const pool=ISL.filter(x=>!owned.includes(x[0]));I.mkt={y:S.year,list:pool.filter(()=>chance(.6)).slice(0,7).map(x=>({k:x[0],price:Math.round(x[4]*rf(.85,1.2)*S.econ.housing/1e4)*1e4}))};}return I.mkt.list;}
+const islDef=k=>ISL.find(x=>x[0]===k);
+const islHas=(o,k)=>o.b.includes(k);
+const islHome=o=>['palace','estate','villa'].find(k=>islHas(o,k));
+const islResort=o=>['mega','resort','lodge'].find(k=>islHas(o,k));
+const islVal=o=>Math.round(o.land+o.bv*.8);
+function islandArt(o){const D=islDef(o.k);const big=D[3]>500;const trop=D[5];const id='is'+o.id+(o.b||[]).length;
+  const sand=trop?'#F3DFA6':'#C9C3A8',green=trop?'#3FA34D':'#3D6E4B';const hs=o.b||[];
+  let x='';const palm=(px,py,s=1)=>`<g transform="translate(${px},${py}) scale(${s})"><path d="M0 0 Q3 -14 1 -28" stroke="#8B5E34" stroke-width="3" fill="none"/><path d="M1 -28 q-14 -2 -20 6 M1 -28 q14 -3 20 5 M1 -28 q-6 -10 -16 -10 M1 -28 q8 -10 18 -8" stroke="${green}" stroke-width="4" fill="none" stroke-linecap="round"/></g>`;
+  const pine=(px,py)=>`<path d="M${px} ${py} l-8 0 l8 -22 l8 22 z" fill="${green}"/>`;
+  for(let i=0;i<6;i++){const px=60+i*40+(i%2)*8,py=112-(i%3)*4;x+=trop?palm(px,py,.9):pine(px,py);}
+  if(islHas(o,'dock'))x+=`<rect x="250" y="118" width="46" height="5" fill="#8B5E34"/><path d="M285 114 l12 0 l-3 4 l-7 0z" fill="#fff"/>`;
+  if(islHas(o,'heli'))x+=`<circle cx="92" cy="118" r="9" fill="#5B6270"/><text x="92" y="122" font-size="10" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="700">H</text>`;
+  if(islHas(o,'air'))x+=`<rect x="40" y="128" width="120" height="6" rx="2" fill="#6B7080"/>`;
+  const h=islHome(o);if(h){const w=h==='palace'?60:h==='estate'?42:26;x+=`<rect x="${150-w/2}" y="${108-(h==='palace'?22:14)}" width="${w}" height="${h==='palace'?22:14}" fill="#FFF8EC" stroke="#C9B48A"/><path d="M${146-w/2} ${108-(h==='palace'?22:14)} l${w/2+4} -10 l${w/2+4} 10z" fill="#B5543C"/>`;}
+  const r=islResort(o);if(r){const n=r==='mega'?5:r==='resort'?3:2;for(let i=0;i<n;i++){const hh=r==='mega'?30+i%2*12:r==='resort'?20:8;x+=`<rect x="${190+i*14}" y="${110-hh}" width="12" height="${hh}" fill="#E8F1FF" stroke="#9FB4D6"/>`;}}
+  return `<svg viewBox="0 0 320 170" width="100%" style="display:block;border-radius:16px"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${trop?'#7FD3F2':'#9CB8CC'}"/><stop offset="1" stop-color="${trop?'#1E9BD1':'#4A7590'}"/></linearGradient></defs>
+   <rect width="320" height="170" fill="url(#${id})"/><circle cx="270" cy="30" r="14" fill="#FFE39A"/><ellipse cx="160" cy="122" rx="${big?150:125}" ry="${big?34:26}" fill="${sand}"/><ellipse cx="160" cy="114" rx="${big?132:100}" ry="${big?24:16}" fill="${green}" opacity=".85"/>${x}
+   <path d="M0 150 q20 -6 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" stroke="#fff" stroke-opacity=".5" fill="none"/></svg>`;}
+H.ibuy=d=>{const m=M(),L_=islMarket(),i=L_.findIndex(x=>x.k===d.k);if(i<0)return;const x=L_[i],D=islDef(x.k);if(m.age<18)return;if(m.cash<x.price){toast(`You need ${money(x.price)}.`);return;}
+  m.cash-=x.price;L_.splice(i,1);const o={id:NID++,k:x.k,paid:x.price,land:x.price,bv:0,b:[],rating:62,staff:'avg',ins:1,mkt:0,last:0,occ:0,bought:S.year,visit:0};ISLS().own.push(o);
+  const t=`You bought ${D[1]}, a private island in ${D[2]}, for ${money(x.price)}.`;L(t,'g');note(t);celebrate('You own an island!',`${D[1]} · ${D[3].toLocaleString()} acres`,'sun','teal');checkAch();UI.view='assets';UI.sub='island';UI.isl=o.id;render();window.scrollTo(0,0);};
+H.ibuild=d=>{const m=M(),o=ISLS().own.find(z=>z.id===+d.id),B_=IBLD.find(z=>z[0]===d.k);if(!o||!B_||islHas(o,B_[0]))return;const cost=Math.round(B_[2]*Math.max(.8,S.econ.housing));if(m.cash<cost){toast(`You need ${money(cost)}.`);return;}
+  m.cash-=cost;o.b.push(B_[0]);o.bv+=cost;const t=`You built a ${B_[1].split(' ·')[0].toLowerCase()} on ${islDef(o.k)[1]}.`;L(t,'g');note(t);if(RTIER[B_[0]]&&B_[0]==='lodge')celebrate('Grand opening!',`Your first resort on ${islDef(o.k)[1]} is open.`,'building','teal');render();};
+H.iset=d=>{const o=ISLS().own.find(z=>z.id===+d.id);if(!o)return;o[d.k]=d.k==='ins'||d.k==='mkt'?+d.v:d.v;render();};
+H.ivisit=d=>{const m=M(),o=ISLS().own.find(z=>z.id===+d.id);if(!o)return;if(o.visit===S.year){toast('You already went this year.');return;}o.visit=S.year;const h=islHome(o);
+  sAdd('happy',h?12:6);sAdd('stress',h?-15:-8);if(!h){note('You camped on your island. Build a villa for a real vacation.');}else{const t=`You spent a few weeks at your ${h==='villa'?'beach villa':h} on ${islDef(o.k)[1]}.`;L(t,'g');note(t);}if(fame()>40&&chance(.4))m.followers+=ri(2e3,8e4);render();};
+H.isell=d=>{const m=M(),I=ISLS(),o=I.own.find(z=>z.id===+d.id);if(!o)return;const v=Math.round(islVal(o)*rf(.9,1.1));m.cash+=v;I.own=I.own.filter(z=>z!==o);const t=`You sold ${islDef(o.k)[1]} for ${money(v)}.`;L(t,'m');note(t);UI.sub='islands';render();};
+function islandTick(){const I=ISLS();if(!I.own.length)return;const st={boom:1.1,stable:1,recession:.8}[S.econ.state]||1;
+  I.own.forEach(o=>{const D=islDef(o.k);o.land=Math.round(o.land*rf(1.0,1.07)*(S.econ.state==='recession'?.97:1));
+   const up=o.bv*.012+(islHome(o)?{villa:2e5,estate:9e5,palace:3e6}[islHome(o)]:5e4);payB(Math.round(up));
+   if(o.ins)payB(Math.round(islVal(o)*.008));
+   const r=islResort(o);o.last=0;
+   if(r){const [rooms,adr]=RTIER[r];const acc=(islHas(o,'dock')?1:0)+(islHas(o,'heli')?1:0)+(islHas(o,'air')?2:0);
+    o.rating=clamp(o.rating+({low:-4,avg:1,high:4}[o.staff])+(o.mkt?1:0)+rf(-3,3),10,100);
+    o.occ=clamp(.3+acc*.09+(o.rating-50)/200+(o.mkt?.08:0)+rf(-.06,.06),.12,.95)*st;
+    const rev=rooms*adr*365*o.occ,opex=rev*({low:.45,avg:.55,high:.68}[o.staff])+(o.mkt?rev*.05:0);const net=Math.round(rev-opex);o.last=net;if(net>=0)earnB(net);else payB(-net);}
+   if(D[5]&&chance(.06)){const dmg=Math.round((o.bv*.12)+o.land*.02);o.rating=clamp(o.rating-10);if(o.ins){L(`A hurricane hit ${D[1]}. Insurance covered the ${money(dmg)} in damage.`,'n');}else{payB(dmg);L(`A hurricane hit ${D[1]}. Repairs cost ${money(dmg)}.`,'b');}}});}
+
+function islandsPage(){const m=M(),I=ISLS(),back={v:'assets'};let h='';
+  if(I.own.length)h+=pgrp('Your islands',I.own.map(o=>{const D=islDef(o.k);return li('sun','teal',esc(D[1]),`${esc(D[2])} · ${money(islVal(o))}${islResort(o)?` · resort ${money(o.last)} last year`:''}`,'iopen',{id:o.id});}));
+  if(m.age<18)return panel('Private islands',h+card('<p class="empty">You can buy an island at 18. Start saving.</p>'),back);
+  h+=card(sh('Islands for sale',`<span class="badge2">${S.econ.state}</span>`)+`<p class="note">Build a vacation home, add a dock, helipad or airstrip, then open a resort and earn from tourists.</p>`);
+  h+=islMarket().map(x=>{const D=islDef(x.k);return card(`${islandArt({id:x.k,k:x.k,b:[]})}<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px"><div style="min-width:0"><b style="font-size:17px">${esc(D[1])}</b><div class="note" style="margin:0">${esc(D[2])} · ${D[3].toLocaleString()} acres · ${D[5]?'tropical':'cool climate'}</div></div>${B(money(x.price),'ibuy',{k:x.k},{cls:'btn pri',dis:m.cash<x.price})}</div>`);}).join('');
+  return panel('Private islands',h,back);}
+H.iopen=d=>{UI.view='assets';UI.sub='island';UI.isl=+d.id;render();window.scrollTo(0,0);};
+function islandPage(id){const m=M(),o=ISLS().own.find(z=>z.id===id),back={v:'assets',s:'islands'};if(!o)return islandsPage();const D=islDef(o.k);const r=islResort(o);
+  let h=card(islandArt(o)+`<h2 style="margin:10px 0 0">${esc(D[1])}</h2><p class="note" style="margin:2px 0 8px">${esc(D[2])} · ${D[3].toLocaleString()} acres</p>`+kvs([['Value',money(islVal(o))],['You paid',`${money(o.paid)} in ${o.bought}`],['Built',money(o.bv)],r&&['Resort rating',`${Math.round(o.rating)}/100`],r&&['Occupancy',`${Math.round(o.occ*100)}%`],r&&['Resort profit last year',money(o.last)]])
+   +`<div class="btnrow" style="margin-top:10px">${B(islHome(o)?'Vacation here':'Camp on the beach','ivisit',{id:o.id},{cls:'btn pri',dis:o.visit===S.year})}${B('Sell island','isell',{id:o.id},{cls:'btn danger'})}</div>`);
+  const grp=(g,l)=>pgrp(l,IBLD.filter(x=>x[5]===g).map(([k,n,c,req,ac])=>{const own=islHas(o,k);const lock=(req&&!islHas(o,req))?`Build the ${IBLD.find(z=>z[0]===req)[1].split(' ·')[0].toLowerCase()} first`:D[3]<ac?`Needs ${ac}+ acres`:'';const cost=Math.round(c*Math.max(.8,S.econ.housing));
+    return li(g==='home'?'home':g==='access'?'plane':'building',own?'mint':'teal',n,own?'Built':lock||money(cost),'ibuild',{id:o.id,k},{dis:own||!!lock,right:own?'<b style="color:var(--mint)">Built</b>':lock?'':money(cost)});}));
+  h+=grp('home','Vacation home')+grp('access','Getting there')+grp('resort','Resort');
+  if(r){const seg=(k,opts)=>`<div class="seg">${opts.map(([v,l])=>`<button data-a="iset" data-id="${o.id}" data-k="${k}" data-v="${v}" aria-pressed="${String(o[k])===String(v)}">${l}</button>`).join('')}</div>`;
+    h+=card(sh('Run the resort')+`<p class="eyebrow">Staffing</p>${seg('staff',[['low','Lean'],['avg','Standard'],['high','Five-star']])}<p class="eyebrow" style="margin-top:10px">Marketing</p>${seg('mkt',[[0,'Off'],[1,'Ad campaign']])}<p class="note">More staff costs more but lifts your rating. Better access (dock, helipad, airstrip) fills more rooms.</p>`);}
+  h+=card(sh('Insurance')+`<div class="seg"><button data-a="iset" data-id="${o.id}" data-k="ins" data-v="1" aria-pressed="${!!o.ins}">Insured</button><button data-a="iset" data-id="${o.id}" data-k="ins" data-v="0" aria-pressed="${!o.ins}">No insurance</button></div><p class="note">${D[5]?'Tropical islands get hurricanes. ':''}Insurance costs about 0.8% of the value each year.</p>`);
+  return panel(D[1],h,back);}
+
+/* ---------- pro team ownership ---------- */
+const LGB={football:[600e6,250e6,5e9],basketball:[420e6,170e6,4e9],baseball:[380e6,200e6,2.6e9],hockey:[230e6,90e6,1.3e9],soccer:[90e6,30e6,6e8],cricket:[70e6,25e6,1e9],rugby:[22e6,8e6,6e7],volleyball:[4e6,1.5e6,1.5e7],esports:[16e6,6e6,8e7]};
+const TCOL=['#C8102E','#003087','#FDB927','#006747','#552583','#FF6720','#00338D','#111111','#00A3E0','#862633'];
+const lgName=k=>{const D=SPORTS[k];return (D.leagueN||D.tour||D.n).replace(/\s*\(.*\)/,'');};
+const lgChamp=k=>SPORTS[k].champ||'league title';
+function TM(){S.tms=S.tms||{own:null,mkt:null,past:[]};return S.tms;}
+function teamMarket(){const T=TM();if(!T.mkt||T.mkt.y!==S.year){const list=[];Object.keys(LGB).forEach(k=>{const tm=(SPORTS[k].teams||[]).filter(n=>!T.own||T.own.name!==n);for(let i=0;i<2&&tm.length;i++){const n=tm.splice(ri(0,tm.length-1),1)[0];list.push({id:NID++,lg:k,name:n,price:Math.round(LGB[k][2]*rf(.6,1.5)*(S.econ.state==='boom'?1.1:S.econ.state==='recession'?.9:1)/1e6)*1e6});}});T.mkt={y:S.year,list};}return T.mkt.list;}
+function crest(t,sz=64){const init=t.name.split(/\s+/).map(w=>w[0]).join('').slice(0,3).toUpperCase();return `<svg viewBox="0 0 64 72" width="${sz}" height="${sz*1.12}" style="flex:none"><path d="M32 2 L60 12 L56 46 Q50 62 32 70 Q14 62 8 46 L4 12 Z" fill="${t.c1}" stroke="${t.c2}" stroke-width="4"/><text x="32" y="44" font-family="Fredoka,sans-serif" font-weight="700" font-size="${init.length>2?16:20}" fill="#fff" text-anchor="middle">${esc(init)}</text></svg>`;}
+H.tbuy=d=>{const m=M(),T=TM();if(T.own){toast('Sell your current team first.');return;}const x=teamMarket().find(z=>z.id===+d.id);if(!x)return;if(m.cash<x.price){toast(`You need ${money(x.price)}.`);return;}
+  m.cash-=x.price;T.mkt.list=T.mkt.list.filter(z=>z!==x);const legend=m.sport&&m.sport.sp===x.lg&&(m.sport.proYears||0)>0;
+  T.own={id:NID++,lg:x.lg,name:x.name,val:x.price,paid:x.price,str:ri(42,62),fans:ri(40,70)+(legend?12:0),coach:1,pay:'avg',tix:'avg',stad:0,star:0,titles:[],hist:[],bought:S.year,c1:pick(TCOL),c2:'#FFFFFF',last:0};
+  const t=`You bought the ${x.name} for ${money(x.price)}.${legend?' Fans love that a former player owns the team.':''}`;L(t,'g');note(t);celebrate('You own a pro team!',`${x.name} · ${lgName(x.lg)}`,'trophy','sun');checkAch();render();window.scrollTo(0,0);};
+H.tset=d=>{const t=TM().own;if(!t)return;t[d.k]=d.k==='coach'?+d.v:d.v;render();};
+H.tact=d=>{const m=M(),t=TM().own;if(!t)return;const pr=LGB[t.lg][1];
+  if(d.op==='stad'){if(t.stad>=2)return;const c=Math.round(t.val*(t.stad?.25:.12));if(m.cash<c){toast(`You need ${money(c)}.`);return;}m.cash-=c;t.stad++;t.val+=c*.6;const s=t.stad===1?'renovated the stadium':'built a brand-new stadium';L(`You ${s} for the ${t.name}.`,'g');note(`You ${s}.`);if(t.stad===2)celebrate('New stadium!',`The ${t.name} have a new home.`,'building','sun');}
+  if(d.op==='star'){if(t.star>0)return;const c=Math.round(pr*.1);if(m.cash<c){toast(`The signing bonus is ${money(c)}.`);return;}m.cash-=c;t.star=3;const p=`${pick(['Marcus','Dante','Luka','Theo','Jalen','Mateo','Kenji','Andre','Rafael','Owen'])} ${pick(['Okafor','Silva','Brooks','Novak','Vance','Ito','Mensah','Reyes','Dupont','Hale'])}`;t.starN=p;L(`The ${t.name} signed superstar ${p}.`,'g');note(`You signed ${p}.`);t.fans=clamp(t.fans+5);}
+  if(d.op==='sell'){const v=Math.round(t.val*rf(.95,1.12));m.cash+=v;TM().past.push({n:t.name,y1:t.bought,y2:S.year,titles:t.titles.length,sold:v});TM().own=null;L(`You sold the ${t.name} for ${money(v)}.`,'m');note(`Sold for ${money(v)}.`);}
+  render();};
+function teamTick(){const T=TM(),t=T.own;if(!t)return;const [rev,pr]=LGB[t.lg];const D=SPORTS[t.lg];
+  const target={low:40,avg:52,high:60,max:66}[t.pay]+t.coach*3+(t.star>0?6:0);t.str=clamp(t.str+(target-t.str)*.4+rf(-6,6),20,99);if(t.star>0)t.star--;
+  const pct=clamp(.5+(t.str-55)/80+rf(-.08,.08),.08,.9);const g=(D.games&&D.games[2])||30;const w=Math.round(pct*g),l=g-w;const po=pct>.57||(pct>.5&&chance(.4));const ch=po&&chance(clamp((pct-.45)*1.3,.03,.6));
+  const em={boom:1.08,stable:1,recession:.9}[S.econ.state]||1;
+  const inc=rev*(.5+t.fans/200)*({low:.85,avg:1,high:1.12}[t.tix])*(1+t.stad*.15)*(ch?1.15:po?1.05:1)*em;
+  const cost=pr*{low:.75,avg:1,high:1.3,max:1.6}[t.pay]+pr*.02*t.coach+(t.star>0?pr*.12:0)+inc*.25;const net=Math.round(inc-cost);t.last=net;if(net>=0)earnB(net);else payB(-net);
+  t.fans=clamp(t.fans+(pct-.5)*30+(ch?8:0)+(t.tix==='high'?-2:t.tix==='low'?2:0));t.val=Math.round(t.val*(1.04+(net>0?.02:-.01)+(ch?.06:0)+rf(-.03,.04)));
+  const res=ch?lgChamp(t.lg)+' champions':po?'made the playoffs':'missed the playoffs';t.hist.push({y:S.year,w,l,res,net});if(t.hist.length>60)t.hist.shift();
+  L(`Your ${t.name} went ${w}-${l} and ${ch?`won the ${lgChamp(t.lg)}!`:res}. ${net>=0?'Profit':'Loss'}: ${money(Math.abs(net))}.`,ch?'g':net<0?'b':'n');
+  if(ch){t.titles.push(S.year);celebrate(`Your team won the ${lgChamp(t.lg)}!`,`${t.name} · ${S.year}`,'trophy','sun');M().renown=(M().renown||0)+1.5;sAdd('happy',10);}}
+function teamView(){const m=M(),T=TM(),t=T.own;let h='';
+  if(t){const pr=LGB[t.lg][1];const lh=t.hist[t.hist.length-1];
+    h+=card(`<div style="display:flex;gap:14px;align-items:center">${crest(t)}<div style="min-width:0"><b style="font-size:20px">${esc(t.name)}</b><div class="note" style="margin:0">${esc(lgName(t.lg))} · owner since ${t.bought}</div></div></div>`+
+      kvs([['Team value',money(t.val)],['You paid',money(t.paid)],['Strength',`${Math.round(t.str)}/100`],['Fan base',`${Math.round(t.fans)}/100`],['Titles',t.titles.length?t.titles.join(', '):'None yet'],lh&&['Last season',`${lh.w}-${lh.l} · ${lh.res}`],['Profit last year',money(t.last)],t.star>0&&['Superstar',`${esc(t.starN||'')} · ${plural(t.star,'year')} left`]]));
+    const seg=(k,opts)=>`<div class="seg">${opts.map(([v,l])=>`<button data-a="tset" data-k="${k}" data-v="${v}" aria-pressed="${String(t[k])===String(v)}">${l}</button>`).join('')}</div>`;
+    h+=card(sh('Front office')+`<p class="eyebrow">Player payroll</p>${seg('pay',[['low','Cheap'],['avg','Average'],['high','Contender'],['max','All in']])}<p class="note">About ${money(pr*{low:.75,avg:1,high:1.3,max:1.6}[t.pay])}/yr. Higher payroll builds a stronger roster over a couple of seasons.</p>
+      <p class="eyebrow" style="margin-top:10px">Head coach</p>${seg('coach',[[1,'Journeyman'],[2,'Proven winner'],[3,'Legend']])}<p class="note">Coach salary ${money(pr*.02*t.coach)}/yr.</p>
+      <p class="eyebrow" style="margin-top:10px">Ticket prices</p>${seg('tix',[['low','Cheap seats'],['avg','Normal'],['high','Premium']])}`);
+    h+=pgrp('Big moves',[li('star','sun',t.star>0?`${esc(t.starN||'Superstar')} is on your roster`:'Sign a superstar',t.star>0?'Big boost to your strength':`Signing bonus ${money(pr*.1)} · then ${money(pr*.12)}/yr for 3 years`,'tact',{op:'star'},{dis:t.star>0}),
+      li('building','violet',t.stad>=2?'You have a new stadium':t.stad?'Build a new stadium':'Renovate the stadium',t.stad>=2?'More revenue every game':money(t.val*(t.stad?.25:.12)),'tact',{op:'stad'},{dis:t.stad>=2}),li('dollar','coral','Sell the team',`Around ${money(t.val)}`,'tact',{op:'sell'})]);
+    if(t.hist.length>1)h+=card(sh('Seasons')+kvs(t.hist.slice(-8).reverse().map(x=>[x.y,`${x.w}-${x.l} · ${x.res}`])));
+    return h;}
+  if(m.age<21)return card('<p class="empty">You can buy a pro team when you’re 21 and rich enough.</p>');
+  h+=card(sh('Teams for sale')+'<p class="note">Smaller leagues cost millions. The big ones cost billions. Owning a team means setting payroll, hiring coaches and chasing championships.</p>');
+  const byL={};teamMarket().forEach(x=>(byL[x.lg]=byL[x.lg]||[]).push(x));
+  Object.keys(byL).sort((a,b)=>LGB[a][2]-LGB[b][2]).forEach(k=>{h+=pgrp(lgName(k),byL[k].map(x=>li(SPORTS[k].i||'trophy','sun',esc(x.name),`${SPORTS[k].n} · about ${money(LGB[k][0]*.9)} revenue a year`,'tbuy',{id:x.id},{dis:m.cash<x.price,right:money(x.price)})));});
+  if(T.past.length)h+=card(sh('Teams you’ve owned')+kvs(T.past.map(p=>[esc(p.n),`${p.y1}–${p.y2} · ${plural(p.titles,'title')}`])));
+  return h;}
+
+/* ---------- auctions & legendary items ---------- */
+const BIDDERS=['a Swiss collector','a hedge fund manager','an anonymous phone bidder','a museum in Dubai','a tech billionaire','a royal family','a Hong Kong dealer','a rival collector'];
+function AUC(){S.auc=S.auc||{y:0,lots:[],won:0,sold:0};const A=S.auc;if(A.y!==S.year){A.y=S.year;const pool=COLL.filter(x=>(x[2]==='collect'||x[2]==='luxury')&&x[4]>=1e4);
+  A.lots=Array.from({length:4},()=>{const x=pick(pool);const lim=chance(.3);const est=Math.round(x[4]*mkt(x[5])*(lim?rf(1.6,3):rf(.8,1.3))/100)*100;return {id:NID++,cid:x[0],name:(lim?'Limited edition · ':'')+x[1],est,bid:Math.round(est*.6/100)*100,lead:'',done:0,lim};});}return A;}
+H.abid=d=>{const m=M(),A=AUC(),l=A.lots.find(z=>z.id===+d.id);if(!l||l.done)return;const nb=Math.round(Math.max(l.bid*1.1,l.est*.6)/100)*100;if(m.cash<nb*1.1){toast('You can’t cover that bid plus the 10% fee.');return;}
+  l.bid=nb;l.lead='you';const p=clamp(1.25-l.bid/(l.est*1.35),0,.92);
+  if(chance(p)){l.bid=Math.round(l.bid*rf(1.05,1.15)/100)*100;l.lead=pick(BIDDERS);note(`Outbid by ${l.lead}: ${money(l.bid)}.`);}else{l.done=1;const pay=Math.round(l.bid*1.1);m.cash-=pay;const x=COLL.find(z=>z[0]===l.cid);
+   S.assets.push({id:NID++,kind:'col',mid:x[0],name:l.name,sub:x[2],tk:x[5],value:Math.round(l.est*rf(.9,1.15)),paid:pay,bought:S.year,auc:1,lim:l.lim?1:0});A.won++;const t=`You won the auction for the ${l.name.toLowerCase()} at ${money(l.bid)} (+10% fee).`;L(t,'g');note(t);if(A.won===1)celebrate('Sold, to you!',l.name,'gem','violet');checkAch();}
+  render();};
+H.apass=d=>{const A=AUC(),l=A.lots.find(z=>z.id===+d.id);if(!l)return;l.done=2;note(`It sold to ${l.lead&&l.lead!=='you'?l.lead:pick(BIDDERS)} for ${money(l.bid)}.`);render();};
+H.asell=d=>{const m=M(),a=S.assets.find(z=>z.id===+d.id);if(!a)return;const leg=chance(a.leg?.25:.04);const p=Math.round(a.value*(leg?rf(3,8):rf(.75,1.45)));m.cash+=p*.9;S.assets=S.assets.filter(z=>z!==a);AUC().sold++;
+  const t=leg?`A bidding war broke out over your ${a.name.toLowerCase()}. It sold for ${money(p)}!`:`Your ${a.name.toLowerCase()} sold at auction for ${money(p)} (10% fee).`;L(t,leg?'g':'m');note(t);if(leg)celebrate('Record auction price!',`${a.name} · ${money(p)}`,'gem','sun');render();};
+function auctionPage(){const m=M(),A=AUC(),back={v:'assets',s:'collection'};let h=card(`<p class="note" style="margin:0">New lots every year. Bid against other collectors; the winner pays a 10% buyer’s fee. Rare pieces sometimes become legendary and soar in value.</p>`);
+  h+=pgrp(`Lots this year · ${S.year}`,A.lots.map(l=>`<div class="li" style="cursor:default;flex-wrap:wrap"><span class="ic sm c-violet">${icon('gem')}</span><span class="li-t"><b>${esc(l.name)}</b><small>Estimate ${money(l.est)} · ${l.done===1?'<b style="color:var(--mint)">You won</b>':l.done===2?'Sold to someone else':l.lead?`High bid ${money(l.bid)} · ${l.lead==='you'?'you':esc(l.lead)}`:`Opens at ${money(l.bid)}`}</small></span>
+    ${l.done?'':`<span style="display:flex;gap:6px;width:100%;justify-content:flex-end;margin-top:6px">${B(`Bid ${money(Math.round(Math.max(l.bid*1.1,l.est*.6)/100)*100)}`,'abid',{id:l.id},{cls:'btn pri'})}${l.lead?B('Drop out','apass',{id:l.id},{cls:'btn ghost'}):''}</span>`}</div>`));
+  const own=S.assets.filter(a=>a.kind==='col'&&(a.sub==='collect'||a.sub==='luxury'));
+  h+=pgrp('Sell at auction',own.length?own.map(a=>li('gem',a.leg?'sun':'violet',`${a.leg?'★ ':''}${esc(a.name)}`,`Worth about ${money(a.value)}${a.leg?' · legendary':''}`,'asell',{id:a.id},{right:'Sell'})):[`<div class="li" style="cursor:default"><span class="li-t"><small>You don’t own any collectibles or luxury pieces yet.</small></span></div>`]);
+  return panel('Auction house',h,back);}
+function legendTick(){S.assets.filter(a=>a.kind==='col'&&a.sub==='collect'&&!a.leg).forEach(a=>{if(chance(a.lim?.03:.012)){a.leg=1;a.value=Math.round(a.value*rf(3,10));L(`Your ${a.name.toLowerCase()} became legendary. It’s now worth ${money(a.value)}.`,'g');celebrate('It’s legendary!',`${a.name} · now ${money(a.value)}`,'gem','sun');}});}
+
+/* ---------- takeovers & holding company ---------- */
+const SECT8=[['rest','Restaurants','coffee'],['hotel','Hotels','building'],['build','Construction','building'],['retail','Shopping centers','bag'],['tech','Tech','zap'],['media','Media','music'],['air','Airline','plane'],['grocery','Grocery','bag'],['fit','Fitness','activity'],['auto','Car dealerships','car']];
+const CNAME=['Apex','Summit','Blue Harbor','Redwood','Silverline','Golden Gate','Northwind','Ironclad','Evergreen','Sterling','Crescent','Atlas','Pioneer','Lighthouse','Bramble','Monarch'];
+const CSUF={rest:'Restaurant Group',hotel:'Hotels & Resorts',build:'Builders',retail:'Malls',tech:'Systems',media:'Media',air:'Airways',grocery:'Markets',fit:'Fitness Clubs',auto:'Motors'};
+const OWNN=['Gloria Vance','Hal Brenner','Priya Natarajan','Otto Lindqvist','Margo Steele','Desmond Pike','Yuki Arai','Rosa Delgado','Felix Harrow','Amara Obi','Leon Castell','Ivy Thornton'];
+function newCo(){const s=pick(SECT8);const v=Math.round(Math.exp(rf(Math.log(8e6),Math.log(6e9)))/1e5)*1e5;return {id:NID++,sec:s[0],n:`${pick(CNAME)} ${CSUF[s[0]]}`,val:v,mar:rf(.06,.13),owner:pick(OWNN),last:0};}
+function CORP(){S.corp=S.corp||{riv:[],own:[],hold:null};const C=S.corp;while(C.riv.length<10)C.riv.push(newCo());return C;}
+const coProfit=c=>Math.round(c.val*c.mar*({boom:1.15,stable:1,recession:.75}[S.econ.state]||1));
+H.coffer=d=>{const m=M(),C=CORP(),c=C.riv.find(z=>z.id===+d.id);if(!c)return;const prem=+d.p;const price=Math.round(c.val*(1+prem));if(m.cash<price){toast(`You need ${money(price)}.`);return;}
+  const p=clamp(.12+prem*1.5+(m.s.biz-50)/200+luckB(),.05,.92);if(chance(p)){m.cash-=price;C.riv=C.riv.filter(z=>z!==c);c.paid=price;c.bought=S.year;C.own.push(c);const t=`${c.owner} accepted your ${money(price)} offer. You now own ${c.n}.`;L(t,'g');note(t);celebrate('Deal done!',`You acquired ${c.n}.`,'briefcase','sun');checkAch();}
+  else{c.rej=(c.rej||0)+1;note(`${c.owner} turned down your offer.`);}render();};
+H.cohostile=d=>{const m=M(),C=CORP(),c=C.riv.find(z=>z.id===+d.id);if(!c)return;const price=Math.round(c.val*1.3),fees=Math.round(c.val*.05);if(m.cash<price+fees){toast(`You need ${money(price+fees)}.`);return;}
+  m.cash-=fees;if(chance(clamp(.4+(m.s.biz-50)/150+luckB(),.1,.85))){m.cash-=price;C.riv=C.riv.filter(z=>z!==c);c.paid=price+fees;c.bought=S.year;c.hostile=1;C.own.push(c);const t=`Your hostile takeover of ${c.n} worked. ${c.owner} is furious.`;L(t,'m');note(t);sAdd('karma',-3);checkAch();}
+  else{const t=`${c.n}’s board fought off your takeover. You lost ${money(fees)} in fees.`;L(t,'b');note(t);}render();};
+H.cosell=d=>{const m=M(),C=CORP(),c=C.own.find(z=>z.id===+d.id);if(!c)return;const v=Math.round(c.val*rf(.92,1.08));m.cash+=v;C.own=C.own.filter(z=>z!==c);c.owner=pick(OWNN);C.riv.push(c);const t=`You sold ${c.n} for ${money(v)}.`;L(t,'m');note(t);render();};
+H.cohold=()=>{const m=M(),C=CORP();if(C.hold)return;if(C.own.length+S.biz.length<3){toast('You need at least 3 companies.');return;}if(m.cash<1e6){toast('Legal fees are $1M.');return;}m.cash-=1e6;C.hold={n:`${m.last||m.first} Holdings`,y:S.year};const t=`You merged your companies into ${C.hold.n}.`;L(t,'g');note(t);celebrate('You run a corporation',C.hold.n,'building','violet');render();};
+function corpTick(){const C=CORP();const em={boom:1.08,stable:1.02,recession:.9}[S.econ.state]||1;[...C.riv,...C.own].forEach(c=>{c.val=Math.round(c.val*em*rf(.88,1.18));c.last=coProfit(c);});
+  C.riv=C.riv.filter(c=>{if(chance(.03)){if(chance(.3))L(`${c.n} went bankrupt.`,'n');return false;}return true;});
+  if(C.own.length){let tot=C.own.reduce((t,c)=>t+c.last,0);if(C.hold){const syn=Math.round(tot*.08+S.biz.reduce((t,b)=>t+Math.max(0,b.last||0),0)*.05);tot+=syn;C.hold.syn=syn;}if(tot>=0)earnB(tot);else payB(-tot);C.lastTot=tot;
+   if(chance(.12)){const c=pick(C.own);S.queue.push({id:'corp_bid',ctx:{id:c.id,n:c.n,p:Math.round(c.val*rf(1.2,1.5)),who:pick(OWNN)}});}}}
+ev('corp_bid',{special:1,title:'Buyout offer',text:c=>`${c.who} wants to buy ${c.n} from you for ${money(c.p)}.`,
+ choices:[{l:'Sell it',fx:c=>{const C=CORP(),x=C.own.find(z=>z.id===c.id);if(!x)return ['The deal fell through.','n'];M().cash+=c.p;C.own=C.own.filter(z=>z!==x);x.owner=c.who;C.riv.push(x);return [`You sold ${c.n} for ${money(c.p)}.`,'g'];}},{l:'Not for sale',fx:()=>['You kept it.','n']}]});
+function corpView(){const m=M(),C=CORP();let h='';
+  h+=card(sh(C.hold?esc(C.hold.n):'Your corporation')+kvs([['Companies you own',C.own.length+S.biz.length],['Acquired companies',C.own.length],['Their value',money(C.own.reduce((t,c)=>t+c.val,0))],['Profit last year',money(C.lastTot||0)],C.hold&&['Merger savings',money(C.hold.syn||0)]])
+   +(C.hold?'':`<div class="btnrow" style="margin-top:10px">${B('Merge into a holding company · $1M','cohold',{},{cls:'btn pri',dis:C.own.length+S.biz.length<3||m.cash<1e6})}</div><p class="note">Own 3+ companies to merge them. A holding company earns 8% more on acquisitions and 5% more on your other businesses.</p>`));
+  if(C.own.length)h+=pgrp('Your acquisitions',C.own.map(c=>{const s=SECT8.find(x=>x[0]===c.sec);return li(s[2],'mint',esc(c.n),`${s[1]} · worth ${money(c.val)} · ${money(c.last)}/yr`,'copen',{id:c.id});}));
+  if(m.age<18)return h+card('<p class="empty">You can buy companies at 18.</p>');
+  h+=pgrp('Companies you could buy',CORP().riv.slice().sort((a,b)=>a.val-b.val).map(c=>{const s=SECT8.find(x=>x[0]===c.sec);return li(s[2],'blue',esc(c.n),`${s[1]} · owner ${esc(c.owner)} · ${money(coProfit(c))}/yr`,'copen',{id:c.id},{right:money(c.val)});}));
+  return h;}
+H.copen=d=>{UI.page={k:'corp',id:+d.id};render();window.scrollTo(0,0);};
+function corpPage(id){const m=M(),C=CORP();const c=[...C.riv,...C.own].find(z=>z.id===id);if(!c)return panel('Company',card('<p class="empty">That company is gone.</p>'),{v:'business'});const mine=C.own.includes(c);const s=SECT8.find(x=>x[0]===c.sec);
+  let h=card(`<div style="display:flex;gap:12px;align-items:center"><span class="ic c-${mine?'mint':'blue'}">${icon(s[2])}</span><div><b style="font-size:19px">${esc(c.n)}</b><div class="note" style="margin:0">${s[1]}${mine?` · yours since ${c.bought}`:` · owned by ${esc(c.owner)}`}</div></div></div>`+kvs([['Company value',money(c.val)],['Yearly profit',money(coProfit(c))],['Profit margin',Math.round(c.mar*100)+'%'],mine&&['You paid',money(c.paid)],c.hostile&&['How you got it','Hostile takeover']]));
+  if(mine)h+=pgrp('',[li('dollar','coral','Sell the company',`Around ${money(c.val)}`,'cosell',{id:c.id})]);
+  else h+=pgrp('Make an offer',[[.1,'Lowball'],[.25,'Fair premium'],[.45,'Generous']].map(([p,l])=>li('briefcase','sun',`${l} · ${money(c.val*(1+p))}`,`${Math.round(p*100)}% over value${c.rej?` · they’ve said no ${plural(c.rej,'time')}`:''}`,'coffer',{id:c.id,p},{dis:m.cash<c.val*(1+p)})).concat([li('zap','coral',`Hostile takeover · ${money(c.val*1.35)}`,'Buy up their shares. If it fails you lose the 5% in fees','cohostile',{id:c.id},{dis:m.cash<c.val*1.35})]));
+  return panel(c.n,h,{v:'business'});}
+PAGEFN.corp=id=>corpPage(id);
+
+/* ---------- rich list & rivals ---------- */
+const RICHN=[['Vera Castellane','Tech founder'],['Bram Okonkwo','Property developer'],['Delphine Marchetti','Luxury goods'],['Kaito Mizuno','Gaming'],['Ruth Abernathy','Heiress'],['Silas Grayborne','Hedge funds'],['Noor Haddad','Shipping'],['Calvin Reyes','Pro athlete'],['Juno Starling','Pop star'],['Magnus Ekdahl','Streaming'],
+ ['Tobias Wren','Developer'],['Imani Coles','Media mogul'],['Fern Lachance','Retail'],['Ozzie Pratt','Crypto'],['Lucía Ferrer','Hotels'],['Arjun Mehta','Telecom'],['Greta Holm','Energy'],['Dex Monroe','Rapper & sneakers'],['Hattie Lowell','Old money'],['Marco Bellini','Sports teams']];
+function RICH(){if(!S.rich){S.rich=RICHN.map(([n,k])=>({n,k,nw:Math.round(Math.exp(rf(Math.log(1.5e9),Math.log(2.2e11)))/1e6)*1e6}));}return S.rich;}
+function richTick(){const R_=RICH();R_.forEach(r=>{let f=rf(.88,1.22);if(chance(.03)){f=rf(.3,.55);if(chance(.6))L(`${r.n} (${r.k.toLowerCase()}) lost over half their fortune.`,'n');}else if(chance(.03)){f=rf(1.6,2.4);if(chance(.5))L(`${r.n}’s fortune doubled this year.`,'n');}r.nw=Math.round(r.nw*f/1e6)*1e6;});
+  const m=M(),nw=netWorth();const rank=R_.filter(r=>r.nw>nw).length+1;m.flags.bestRank=Math.min(m.flags.bestRank||999,rank);
+  if(rank<=20&&!m.flags.richlist){m.flags.richlist=1;celebrate('You made the rich list!',`You’re #${rank} on the Forbz-ish 20.`,'crown','sun');}if(rank===1&&!m.flags.richest){m.flags.richest=1;celebrate('Richest person in the world',`Worth ${money(nw)}.`,'crown','sun');}}
+function vRich(){const m=M(),nw=netWorth();const rows=[...RICH().map(r=>({...r,me:0})),{n:`${m.first} ${m.last} (you)`,k:'You',nw,me:1}].sort((a,b)=>b.nw-a.nw);const me=rows.findIndex(r=>r.me)+1;
+  const cut=rows[19]?rows[19].nw:0;
+  return `<div class="pagehead"><h1>Rich list</h1></div>`+card(kvs([['Your rank',`#${me}`],['Your net worth',money(nw)],me>20&&['Needed for the top 20',money(cut)],['Best rank ever',m.flags.bestRank&&m.flags.bestRank<999?'#'+m.flags.bestRank:'—']]))
+   +pgrp('Forbz-ish 20',rows.slice(0,Math.max(20,me<=21?20:0)).map((r,i)=>li(r.me?'crown':'user',r.me?'sun':'blue',`${i+1}. ${esc(r.n)}`,esc(r.k),'go',{v:'more',s:'rich'},{right:`<b>${money(r.nw)}</b>`})))+(me>20?pgrp('',[li('crown','sun',`${me}. You`,'Keep climbing','go',{v:'money'},{right:`<b>${money(nw)}</b>`})]):'');}
+
+/* ---------- records ---------- */
+function recTick(){const m=M();S.recs=S.recs||{};const R_=S.recs;const who=`${m.first} ${m.last}`;const set=(k,v,lbl)=>{if(v>0&&(!R_[k]||v>R_[k].v))R_[k]={v,who,y:S.year,lbl};};
+  set('nw',netWorth());const last=(S.mhist||[])[S.mhist.length-1];if(last)set('inc',last.rows.reduce((t,r)=>t+r[1],0));
+  const buys=[...S.assets.map(a=>[a.paid||0,a.name]),...ISLS().own.map(o=>[o.paid,islDef(o.k)[1]]),...(TM().own?[[TM().own.paid,TM().own.name]]:[]),...CORP().own.map(c=>[c.paid||0,c.n])].sort((a,b)=>b[0]-a[0]);if(buys[0])set('buy',buys[0][0],buys[0][1]);
+  const props=[...(S.re&&S.re.props?S.re.props.map(p=>[propVal(p),p.name]):[]),...homes().map(a=>[a.value,a.name])].sort((a,b)=>b[0]-a[0]);if(props[0])set('prop',props[0][0],props[0][1]);
+  const champs=((m.sport&&m.sport.awards)||[]).filter(a=>a.w>=4).length+(TM().own?TM().own.titles.length:0);set('champ',champs);
+  set('biz',S.biz.length+CORP().own.length);set('fol',m.followers||0);set('fame',fame());m.flags.hiNw=Math.max(m.flags.hiNw||0,netWorth());}
+function vRecords(){const R_=S.recs||{};const m=M();const ROWS=[['nw','Highest net worth',money],['inc','Biggest year of income',money],['buy','Most expensive purchase',money],['prop','Most valuable property',money],['champ','Championships won',v=>v],['biz','Companies owned at once',v=>v],['fol','Biggest audience',fmtN],['fame','Highest fame',v=>v+'/100']];
+  return `<div class="pagehead"><h1>Lifetime records</h1><p class="muted">Best marks across every generation of your family.</p></div>`+pgrp('Family records',ROWS.map(([k,l,f])=>{const r=R_[k];return li('award','sun',l,r?`${esc(r.who)} · ${r.y}${r.lbl?' · '+esc(r.lbl):''}`:'No record yet','go',{v:'more',s:'records'},{right:r?`<b>${f(r.v)}</b>`:'—'});}))
+   +card(sh(`${esc(m.first)}’s milestones`)+kvs([['First million',m.flags.firstMil?`Age ${m.flags.firstMil}`:'Not yet'],['First billion',m.flags.firstBil?`Age ${m.flags.firstBil}`:'Not yet'],['Peak net worth',money(m.flags.hiNw||netWorth())],['Achievements',`${(m.achs||[]).length}`]]));}
+
+/* ---------- lifestyle tiers, personal staff, exclusive events ---------- */
+const WT=[[1e6,'Millionaire'],[1e7,'Multi-millionaire'],[1e8,'Centimillionaire'],[1e9,'Billionaire'],[1e10,'Decabillionaire'],[1e11,'Centibillionaire']];
+const wtier=(nw=netWorth())=>{let i=-1;WT.forEach((t,j)=>{if(nw>=t[0])i=j;});return i;};
+const PSTAFF=[['assistant','Personal assistant',75e3,2e6,'Less stress'],['driver','Chauffeur',80e3,5e6,'Less stress, safer trips'],['butler','Butler',95e3,1e7,'A happier home'],['chef','Private chef',130e3,1e7,'Better health'],
+ ['stylist','Stylist',110e3,5e7,'Better looks'],['trainer','Personal trainer',90e3,5e6,'Better fitness'],['doctor','Concierge doctor',260e3,1e8,'Better health and checkups'],['security','Security detail',700e3,1e8,'Safety from kidnappers and stalkers']];
+const EXV=[['gala','Charity gala',25e3,1e6,0,'Dress up and donate'],['yachtweek','Celebrity yacht week',250e3,1e7,0,'A week on a superyacht off the coast'],['gp','Monacco-ish Grand Prix VIP',150e3,5e7,0,'Paddock passes and champagne'],
+ ['metgala','The Mett-ish Gala',300e3,1e8,70,'The fashion event of the year'],['davos','Davoz Economic Forum',100e3,1e9,0,'Rub shoulders with presidents'],['space','Suborbital space flight',50e6,1e9,0,'Ten minutes of weightlessness'],['moon','Lunar flyby',800e6,1e10,0,'Loop around the Moon']];
+H.pstaff=d=>{const m=M();m.pst=m.pst||{};m.pst[d.k]=m.pst[d.k]?0:1;const P=PSTAFF.find(x=>x[0]===d.k);note(m.pst[d.k]?`You hired a ${P[1].toLowerCase()}.`:`You let your ${P[1].toLowerCase()} go.`);render();};
+H.exev=d=>{const m=M(),E=EXV.find(x=>x[0]===d.k);if(!E)return;m.exy=m.exy||{};if(m.exy[E[0]]===S.year){toast('Once a year.');return;}if(m.cash<E[2]){toast(`It costs ${money(E[2])}.`);return;}m.cash-=E[2];m.exy[E[0]]=S.year;
+  sAdd('happy',E[0]==='space'||E[0]==='moon'?20:8);sAdd('stress',-5);m.followers+=Math.round((m.followers||0)*.02+ri(500,2e4)*(E[0]==='metgala'?5:1));m.renown=(m.renown||0)+(E[0]==='moon'?3:E[0]==='space'?2:.5);
+  const lines={gala:'You donated, danced and met half the city’s elite.',yachtweek:'You spent a week partying on a superyacht.',gp:'You watched the race from the pit wall.',metgala:'Your outfit was all anyone talked about.',davos:'You debated world leaders over very expensive coffee.',space:'You floated in space and saw the curve of the Earth.',moon:'You looped around the Moon. Few humans have ever seen that.'};
+  L(lines[E[0]],'g');note(lines[E[0]]);if(E[0]==='space'||E[0]==='moon'){m.flags[E[0]]=1;celebrate(E[0]==='moon'?'You went around the Moon':'You went to space!',lines[E[0]],'sun','violet');}
+  if(E[0]==='davos'&&chance(.3)){const p=Math.round(netWorth()*rf(.005,.02));earnB(p);L(`A deal you made at the forum earned ${money(p)}.`,'g');}checkAch();render();};
+function lifestyleTick(){const m=M();if(!m.alive)return;const nw=netWorth(),t=wtier(nw);m.flags.wt=m.flags.wt??-1;
+  if(nw>=1e6&&!m.flags.firstMil)m.flags.firstMil=m.age;if(nw>=1e9&&!m.flags.firstBil)m.flags.firstBil=m.age;
+  if(t>m.flags.wt){if(t>=1)celebrate(`You’re a ${WT[t][0]>=1e9?'':''}${WT[t][1].toLowerCase()}!`,`Net worth ${money(nw)}. New perks unlocked in Assets › Lifestyle.`,'crown','sun');m.flags.wt=t;}
+  const st=m.pst||{};let cost=0;PSTAFF.forEach(([k,,sal])=>{if(st[k])cost+=sal;});if(cost)payB(cost);
+  if(st.assistant)sAdd('stress',-2);if(st.driver)sAdd('stress',-1);if(st.butler)sAdd('happy',2);if(st.chef)sAdd('health',1);if(st.trainer)sAdd('fitness',1);if(st.doctor)sAdd('health',2);if(st.stylist)sAdd('looks',1);
+  if(!st.security&&nw>1e8&&chance(.04)){const lost=Math.round(Math.min(m.cash*.02,5e6));m.cash-=lost;L(`Thieves broke into your home and stole ${money(lost)} in valuables. A security team might have stopped them.`,'b');}}
+function lifestylePage(){const m=M(),nw=netWorth(),t=wtier(nw),back={v:'assets'};const nx=WT[t+1];
+  let h=card(`<div class="eyebrow">Wealth tier</div><div style="font-size:24px;font-weight:800">${t>=0?WT[t][1]:'Getting there'}</div>${nx?`<p class="note" style="margin:4px 0 8px">Next: ${nx[1]} at ${money(nx[0])}</p><span class="li-bar" style="display:block"><i style="width:${clamp(Math.log10(Math.max(1,nw))/Math.log10(nx[0])*100)}%;background:var(--sun)"></i></span>`:'<p class="note">You’re at the very top.</p>'}`);
+  h+=pgrp('Personal staff',PSTAFF.map(([k,n,sal,req,d])=>{const on=m.pst&&m.pst[k];const lock=nw<req;return li('users',on?'mint':'blue',n,lock?`Unlocks at ${money(req)}`:`${d} · ${money(sal)}/yr`,'pstaff',{k},{dis:lock&&!on,right:on?'<b style="color:var(--mint)">Hired</b>':lock?'':'Hire'});}));
+  h+=pgrp('Exclusive events',EXV.map(([k,n,c,req,fm,d])=>{const lock=nw<req&&!(fm&&fame()>=fm);const done=m.exy&&m.exy[k]===S.year;return li('star',done?'mint':'violet',n,lock?`Unlocks at ${money(req)}${fm?` or ${fm} fame`:''}`:done?'Done this year':`${d} · ${money(c)}`,'exev',{k},{dis:lock||done});}));
+  h+=pgrp('Billionaire toys',[li('anchor','teal','Superyachts','Boat dealer','asub',{v:'fleet'}),li('plane','blue','Private jets','Aircraft dealer','asub',{v:'fleet'}),li('sun','teal','Private islands','Buy and build your own','asub',{v:'islands'}),li('trophy','sun','Own a pro team','Business › Sports team','bt8',{v:'team'}),li('gem','violet','Auction house','Rare collectibles','asub',{v:'auction'})]);
+  return panel('Lifestyle',h,back);}
+H.bt8=d=>{UI.view='business';UI.bt=d.v;UI.sub=null;UI.page=null;render();window.scrollTo(0,0);};
+
+/* ---------- museum & sets ---------- */
+const MSETS=[['watch','Watch wall',['rollex','patek','mill']],['jewel','Jewelry vault',['ring','neck','bracelet']],['art','Gallery of masters',['art1','art2','art3','sculpt']],['cards','Card binder',['card1','card2']],['comic','Comic archive',['comic1','comic2']],
+ ['coin','Coin cabinet',['coin1','coin2']],['memo','Locker room',['jersey1','jersey2']],['sneak','Sneaker wall',['sneak1','sneak2']],['antique','Antiques hall',['vase','clock','guitar']]];
+const MUSL=[['Collection room',250e3,1e6,'Turn a room in a $1M+ home into a display'],['Private gallery wing',5e6,5e6,'Add a gallery wing to a $5M+ home'],['Public museum',50e6,0,'A museum with your name on it']];
+function MUS(){S.mus=S.mus||{lvl:0,open:0,sets:{},last:0,vis:0};return S.mus;}
+const ownMid=id=>S.assets.some(a=>a.kind==='col'&&a.mid===id);
+function musStats(){const col=S.assets.filter(isCol),cars=S.assets.filter(isCar);const tro=((M().sport&&M().sport.awards)||[]).filter(a=>a.w>=2).length+(TM().own?TM().own.titles.length:0)+(M().flags.creatorAward?1:0);
+  const sets=MSETS.filter(s=>s[2].every(ownMid));return {col,cars,tro,sets,val:col.reduce((t,a)=>t+a.value,0)+cars.reduce((t,a)=>t+a.value,0)};}
+function musCheck(){const U=MUS(),st=musStats();st.sets.forEach(s=>{if(!U.sets[s[0]]){U.sets[s[0]]=S.year;celebrate('Set complete!',`${s[1]}: you own every piece.`,'award','violet');L(`You completed the ${s[1].toLowerCase()} set.`,'g');}});
+  [[10,'Car hall'],[25,'Grand car hall'],[50,'Motor museum']].forEach(([n,l])=>{if(st.cars.length>=n&&!U.sets['car'+n]){U.sets['car'+n]=S.year;celebrate('Set complete!',`${l}: ${n} cars on display.`,'car','teal');}});
+  if(st.tro>=5&&!U.sets.tro){U.sets.tro=S.year;celebrate('Trophy case full','Five major trophies on the shelf.','trophy','sun');}}
+H.musup=()=>{const m=M(),U=MUS();if(U.lvl>=3)return;const L_=MUSL[U.lvl];const best=Math.max(0,...homes().map(a=>a.value));if(L_[2]&&best<L_[2]){toast(`You need a home worth ${money(L_[2])}.`);return;}if(m.cash<L_[1]){toast(`You need ${money(L_[1])}.`);return;}
+  m.cash-=L_[1];U.lvl++;if(U.lvl===3)U.open=1;const t=U.lvl===3?`The ${m.last||m.first} Museum opened to the public.`:`You built a ${L_[0].toLowerCase()}.`;L(t,'g');note(t);celebrate(U.lvl===3?'Your museum is open!':'Display ready',t,'building','violet');checkAch();render();};
+H.mustour=()=>{const m=M(),U=MUS();if(U.tour===S.year){toast('You already gave a tour this year.');return;}U.tour=S.year;const st=musStats();sAdd('happy',4);sAdd('social',3);const t=st.col.length+st.cars.length>5?'Your friends couldn’t believe the collection.':'Your friends politely admired your small collection.';L(t,'g');note(t);render();};
+H.musopen=()=>{const U=MUS();if(U.lvl<2)return;U.open=U.open?0:1;note(U.open?'Your collection is open for public tours.':'Your collection is private again.');render();};
+function museumTick(){musCheck();const U=MUS();if(!U.lvl)return;const st=musStats();
+  if(U.open&&U.lvl>=2){const appeal=Math.sqrt(st.val/1e4)*(1+st.sets.length*.15)*(1+fame()/100)*(U.lvl===3?3:1);U.vis=Math.round(appeal*rf(150,300));const rev=U.vis*(U.lvl===3?30:20),cost=U.lvl===3?6e5:1.5e5;U.last=Math.round(rev-cost);if(U.last>=0)earnB(U.last);else payB(-U.last);}else{U.vis=0;U.last=0;payB(U.lvl===1?5e3:3e4);}}
+function museumPage(){const m=M(),U=MUS(),st=musStats(),back={v:'assets'};
+  let h=card(`<div class="eyebrow">${U.lvl?MUSL[U.lvl-1][0]:'No display yet'}</div><div style="font-size:22px;font-weight:800">${U.lvl===3?`${esc(m.last||m.first)} Museum`:U.lvl?'Your collection':'Show off your stuff'}</div>`+kvs([['Collectibles & luxury',st.col.length],['Cars',st.cars.length],['Trophies',st.tro],['Sets complete',`${st.sets.length} of ${MSETS.length}`],['Collection value',money(st.val)],U.open&&['Visitors last year',U.vis.toLocaleString()],U.open&&['Museum profit last year',money(U.last)]])
+   +`<div class="btnrow" style="margin-top:10px">${U.lvl<3?B(`${MUSL[U.lvl][0]} · ${money(MUSL[U.lvl][1])}`,'musup',{},{cls:'btn pri'}):''}${U.lvl?B('Give friends a tour','mustour',{},{dis:U.tour===S.year}):''}${U.lvl===2?B(U.open?'Close to the public':'Open for public tours','musopen',{},{cls:'btn ghost'}):''}</div>${U.lvl<3?`<p class="note">${MUSL[U.lvl][3]}.</p>`:''}`);
+  h+=pgrp('Sets',[...MSETS.map(([k,n,ids])=>{const have=ids.filter(ownMid).length;return li('gem',have===ids.length?'mint':'violet',n,ids.map(i=>`${ownMid(i)?'✓':'○'} ${(COLL.find(x=>x[0]===i)||[0,i])[1]}`).join(' · '),'asub',{v:'collection'},{bar:have/ids.length*100});}),
+   ...[[10,'Car hall'],[25,'Grand car hall'],[50,'Motor museum']].map(([n,l])=>li('car',st.cars.length>=n?'mint':'teal',l,`${Math.min(st.cars.length,n)}/${n} cars`,'asub',{v:'vehicles'},{bar:Math.min(1,st.cars.length/n)*100})),li('trophy',st.tro>=5?'mint':'sun','Trophy case',`${Math.min(st.tro,5)}/5 major trophies`,'asub',{v:'dash'},{bar:Math.min(1,st.tro/5)*100})]);
+  return panel('Museum & sets',h,back);}
+
+/* ---------- media empire: creator roster ---------- */
+const CRN=['@NovaNoodle','@SkaterSol','@ChefBenny','@GlowWithGia','@TechTariq','@PrankPete','@LilMaple','@ZenZara','@DunkDaddy','@CozyCass','@MathMarco','@FitFrida'];
+function rosterOffers(){const s=SOC();if(!s.media)return [];s.ros=s.ros||[];if(!s.rof||s.rof.y!==S.year){const taken=s.ros.map(r=>r.n);s.rof={y:S.year,list:CRN.filter(n=>!taken.includes(n)).sort(()=>rand()-.5).slice(0,3).map(n=>{const f=Math.round(Math.exp(rf(Math.log(2e4),Math.log(5e6))));return {id:NID++,n,f,fee:Math.round(f*rf(.3,.8)/100)*100};})};}return s.rof.list;}
+H.rsign=d=>{const m=M(),s=SOC(),o=rosterOffers().find(z=>z.id===+d.id);if(!o)return;if(m.cash<o.fee){toast(`You need ${money(o.fee)}.`);return;}m.cash-=o.fee;s.ros.push({n:o.n,f:o.f,y:S.year,last:0});s.rof.list=s.rof.list.filter(z=>z!==o);const t=`${s.media.name} signed ${o.n} (${fmtN(o.f)} followers).`;L(t,'g');note(t);render();};
+H.rdrop=d=>{const s=SOC();s.ros=(s.ros||[]).filter(r=>r.n!==d.n);note(`You released ${d.n}.`);render();};
+function rosterTick(){const m=M();if(!m.soc||!m.soc.media||!(m.soc.ros||[]).length)return;let tot=0;m.soc.ros.forEach(r=>{r.f=Math.round(r.f*rf(.85,1.45));r.last=Math.round(r.f*rf(.03,.08)*(1+m.soc.media.lvl*.25)*.3);tot+=r.last;if(chance(.05)){r.gone=1;L(`${r.n} left ${m.soc.media.name} for a rival company.`,'n');}});m.soc.ros=m.soc.ros.filter(r=>!r.gone);if(tot)earnB(tot);}
+const _sd10=socialDash;socialDash=function(){const h=_sd10();const s=M().soc;if(!s||!s.media)return h;
+  const g=pgrp(`${esc(s.media.name)} creators`,[...(s.ros||[]).map(r=>li('user','mint',esc(r.n),`${fmtN(r.f)} followers · your 30% cut ${money(r.last||0)} last year`,'rdrop',{n:r.n},{right:'Release'})),...rosterOffers().map(o=>li('user','violet',`Sign ${esc(o.n)}`,`${fmtN(o.f)} followers · signing fee ${money(o.fee)}`,'rsign',{id:o.id},{right:money(o.fee)}))]);
+  const i=h.indexOf('<div class="pg"><div class="pgh">Team</div>');return i>=0?h.slice(0,i)+g+h.slice(i):h;};
+
+/* ---------- yearly recap ---------- */
+function recapHTML(r){const chip=(t,c)=>`<span class="chip c-${c}">${t}</span>`;const out=[];
+  if(r.inc)out.push(chip(`+${money(r.inc)} earned`,'mint'));if(r.exp)out.push(chip(`−${money(r.exp)} spent`,'coral'));if(Math.abs(r.nwd)>=1)out.push(chip(`Net worth ${r.nwd>=0?'▲':'▼'} ${money(Math.abs(r.nwd))}`,r.nwd>=0?'blue':'coral'));
+  if(r.fd)out.push(chip(`${r.fd>0?'+':'−'}${fmtN(Math.abs(r.fd))} followers`,'violet'));(r.x||[]).forEach(x=>out.push(chip(esc(x),'sun')));
+  return out.length?`<div class="recap"><b>Year in review</b><div class="chips" style="margin-top:6px">${out.join('')}</div></div>`:'';}
+const _au10=ageUp;ageUp=function(){const y0=S.year,nw0=netWorth(),f0=M().followers||0;_au10.apply(this,arguments);if(S.year===y0||!S.me)return;
+  try{richTick();recTick();}catch(e){console.error(e);}
+  const m=M(),last=(S.mhist||[])[S.mhist.length-1],lg=S.log[S.log.length-1];if(!lg||lg.age!==m.age)return;
+  const x=[];const t=TM().own;if(t&&t.hist.length&&t.hist[t.hist.length-1].y===S.year-1||t&&t.hist.length&&t.hist[t.hist.length-1].y===S.year){const hh=t.hist[t.hist.length-1];x.push(`${t.name.split(' ').slice(-1)[0]} ${hh.w}-${hh.l}`);}
+  if(m.sport&&m.sport.lastLine)x.push(m.sport.lastLine);
+  lg.rc={inc:last&&last.y>=y0?last.rows.reduce((t,r)=>t+r[1],0):0,exp:last&&last.y>=y0?last.rows.reduce((t,r)=>t+r[2],0):0,nwd:Math.round(netWorth()-nw0),fd:(m.followers||0)-f0,x};};
+
+/* ---------- achievements ---------- */
+ACH.push(['island','Castaway Deluxe','Own a private island','sun','teal',()=>ISLS().own.length>0],['resort','Hotelier of Paradise','Open a resort on your island','building','teal',()=>ISLS().own.some(o=>islResort(o))],
+ ['owner','The Owner’s Box','Own a pro sports team','trophy','sun',()=>!!TM().own],['ownerchamp','Champagne in the Locker Room','Win a title as a team owner','trophy','sun',()=>!!(TM().own&&TM().own.titles.length)],
+ ['auction','Going Once, Going Twice','Win an auction','gem','violet',()=>!!(S.auc&&S.auc.won)],['legend','Legendary','Own a legendary collectible','gem','sun',()=>S.assets.some(a=>a.leg)],
+ ['acquire','Corporate Raider','Acquire another company','briefcase','sun',()=>!!(S.corp&&S.corp.own.length)],['richlist','Forbz-ish 20','Make the rich list','crown','sun',m=>!!m.flags.richlist],
+ ['curator','Curator','Open a public museum','building','violet',()=>!!(S.mus&&S.mus.lvl>=3)],['space','Astronaut-ish','Fly to space','sun','violet',m=>!!(m.flags.space||m.flags.moon)]);
+
+/* ---------- wiring ---------- */
+const _vA10=vAssets;vAssets=function(){const s=UI.sub;if(s==='islands')return islandsPage();if(s==='island')return islandPage(UI.isl);if(s==='auction')return auctionPage();if(s==='museum')return museumPage();if(s==='lifestyle')return lifestylePage();
+  let h=_vA10();if(s==='collection')h=h.replace('<div class="pb">',`<div class="pb">${pgrp('',[li('gem','violet','Auction house','Bid on rare pieces or sell yours','asub',{v:'auction'}),li('award','sun','Museum & sets','Display your collection, complete sets','asub',{v:'museum'})])}`);
+  if(s||!M().alive)return h;const I=ISLS();const rows=[li('crown','sun','Lifestyle',`${wtier()>=0?WT[wtier()][1]:'Not a millionaire yet'} · staff and exclusive events`,'asub',{v:'lifestyle'}),li('sun','teal','Private islands',I.own.length?`${plural(I.own.length,'island')} · ${money(I.own.reduce((t,o)=>t+islVal(o),0))}`:'Buy your own island','asub',{v:'islands'}),li('award','violet','Museum & sets',`${musStats().sets.length} of ${MSETS.length} sets complete`,'asub',{v:'museum'})];
+  const k='<div class="pg"><div class="pgh">Misc</div>';const i=h.indexOf(k);return i>=0?h.slice(0,i+k.length)+rows.join('')+h.slice(i+k.length):h;};
+const _r10=route;route=function(v,s){if(v==='assets'&&['islands','auction','museum','lifestyle'].includes(s)){UI.view='assets';UI.sub=s;return;}return _r10(v,s);};
+const v10Val=()=>{let v=0;if(S.isl)v+=S.isl.own.reduce((t,o)=>t+islVal(o),0);if(S.tms&&S.tms.own)v+=S.tms.own.val;if(S.corp)v+=S.corp.own.reduce((t,c)=>t+c.val,0);return v;};
 
 
 document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el||el.disabled)return;const f=H[el.dataset.a];if(!f)return;
