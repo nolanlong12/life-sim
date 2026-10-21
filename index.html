@@ -1025,7 +1025,6 @@ const P=id=>S.people.find(p=>p.id===+id);
 const alive=rel=>S.people.filter(p=>p.alive&&(!rel||[].concat(rel).includes(p.rel)));
 const partner=()=>S.people.find(p=>p.alive&&['partner','fiance','spouse'].includes(p.rel));
 const hasT=t=>M().talent===t||M().talent2===t;
-const fame=()=>Math.round(clamp(Math.log10(S.me.followers+1)*14.5));
 const look=()=>{const m=M();const o=OUTFITS.find(x=>x.id===m.ap.outfit);return Math.round(clamp(m.s.looks+(o?o.s:0)+(m.ap.acc==='shades'?1:0)));};
 const luckB=()=>(M().s.luck-50)/400+(hasT('lucky')?.05:0);
 const PV=k=>M().pers[k]??50;
@@ -1658,11 +1657,10 @@ function ageUp(){const m=M();if(!m.alive){showDeath();return;}if(S.camp){showCam
   if(m.age===2)L(`Your first word was "${pick(['ball','no','dog','more','uh-oh','up'])}".`,'g');
   if(chapter(m.age)!==ch0)L(`A new chapter begins: ${chapter(m.age)}.`,'a');
   if(m.prison>0){m.prison--;if(!m.prison){L('You were released from prison. Time to rebuild.','g');sAdd('happy',10);}else L(`${plural(m.prison,'year')} left on your sentence.`,'b');}
-  S.done={};const LR=[];const T_=(l,f)=>ledgerTrack(LR,l,f);econTick();T_('Sports pay & sponsorships',()=>{sportTick();sportExtraTick();});schoolTick();T_('Salary',jobTick);T_('Coaching salary',coachTick);T_('Elected office salary',politicsTick);T_('Showbiz income',showbizTick);skillTick();T_('Business profits',bizTick);T_('Homes: rent, upkeep & staff',homesTick);T_('Cars, boats, aircraft & memberships',ridesTick);T_('Real estate company',empireTick);T_('Living costs, allowance & pension',financeTick);healthTick();peopleTick();const LI=S.led.inc;
-  if(m.followers>0){if((!m.job||!JOBS[m.job.id]||!(JOBS[m.job.id].fame||JOBS[m.job.id].special))&&!(m.sport&&m.sport.stage==='pro'))m.followers=Math.round(m.followers*rf(.88,1.02));
-    if(m.followers>=1e4&&!m.prison){const sp=Math.round(m.followers*rf(.02,.06));earnB(sp);L(`Sponsored posts brought in ${money(sp)}.`,'m');}}
+  S.done={};const LR=[];const T_=(l,f)=>ledgerTrack(LR,l,f);econTick();T_('Sports pay & sponsorships',()=>{sportTick();sportExtraTick();});schoolTick();T_('Salary',jobTick);T_('Coaching salary',coachTick);T_('Elected office salary',politicsTick);T_('Showbiz income',showbizTick);skillTick();T_('Business profits',bizTick);T_('Homes: rent, upkeep & staff',homesTick);T_('Cars, boats, aircraft & memberships',ridesTick);T_('Real estate company',empireTick);T_('Social media',socialTick);renownTick();T_('Living costs, allowance & pension',financeTick);healthTick();peopleTick();const LI=S.led.inc;
+  if(m.followers>0&&!(m.soc&&accs().length)){if((!m.job||!JOBS[m.job.id]||!(JOBS[m.job.id].fame||JOBS[m.job.id].special))&&!(m.sport&&m.sport.stage==='pro'))m.followers=Math.round(m.followers*rf(.88,1.02));}
   if(m.age>=18&&(S.led.inc||S.led.exp))L(`Earned ${money(S.led.inc)} · spent ${money(S.led.exp)} on living costs and upkeep.`,'m');
-  if(S.led.inc-LI>0)LR.push(['Social media sponsorships',Math.round(S.led.inc-LI),0]);{const oth=LR.filter(r=>r[0]==='__other');const keep=LR.filter(r=>r[0]!=='__other');const oi=oth.reduce((t,r)=>t+r[1],0),oe=oth.reduce((t,r)=>t+r[2],0);const net=oi-oe;if(Math.abs(net)>=1)keep.push(['__other',net>0?net:0,net<0?-net:0]);
+  {const oth=LR.filter(r=>r[0]==='__other');const keep=LR.filter(r=>r[0]!=='__other');const oi=oth.reduce((t,r)=>t+r[1],0),oe=oth.reduce((t,r)=>t+r[2],0);const net=oi-oe;if(Math.abs(net)>=1)keep.push(['__other',net>0?net:0,net<0?-net:0]);
     S.mhist=S.mhist||[];if(m.age>=6||keep.length)S.mhist.push({y:S.year,age:m.age,rows:keep,cash:Math.round(m.cash),nw:Math.round(netWorth()),debt:Math.round(m.debt)});if(S.mhist.length>80)S.mhist=S.mhist.slice(-80);}
   const yd=diffs(before,snap(),false).filter(x=>Math.abs(x.d)>=2);S.lastYear=yd;
   if(yd.length)L(`Over the year: ${yd.map(x=>x.label).join(', ')}.`);
@@ -3148,24 +3146,27 @@ const STYLES=[['modern','Modern'],['contemporary','Contemporary'],['traditional'
 const HSTYLE_COST={modern:380,contemporary:360,traditional:300,mediterranean:420,rustic:320,futuristic:620,farmhouse:280,chalet:450,historic:480};
 const plotSizes=[['small','Small lot',.25],['medium','1 acre',1],['large','5 acres',5],['estate','20-acre estate',20],['ranch','200-acre ranch',200]];
 const landAcre=c=>Math.round(220e3*Math.pow(c.house*envM().house,1.5)*({B:6,C:2.5,S:1.3,T:.5,E:1.8,M:.7,R:.06,X:3.5}[c.t]||1)/100)*100;
-const homeVal=(base,c,sq,midsq,cond)=>base*c.house*envM().house*S.econ.housing*(lmkt(M().city))*Math.pow(sq/midsq,.8)*(.55+.45*cond/100);
+const homeVal=(base,c,sq,midsq,cond,ci=M().city)=>base*c.house*(ci===M().city?envM().house:1)*S.econ.housing*(lmkt(ci))*Math.pow(sq/midsq,.8)*(.55+.45*cond/100);
 const lmkt=ci=>(S.lmkt&&S.lmkt[ci])||1;
-function featFor(k,rnd){const cat=HT[k][1];const f={};const lux=cat==='lux';
+function featFor(k,rnd,cc){const cat=HT[k][1];const f={};const lux=cat==='lux';
   if((lux&&rnd()<.85)||(cat==='house'&&rnd()<.3))f.pool=lux&&rnd()<.35?'infinity':'standard';
   if(cat!=='apt')f.garage=lux?ri(3,8):ri(1,3);else if(rnd()<.4)f.garage=1;
-  if(lux&&rnd()<.6)f.theater=1;if(lux&&rnd()<.6)f.gym=1;if(lux&&rnd()<.45)f.court=1;if(lux&&rnd()<.5)f.guest=1;if((lux||k==='lake')&&isWater(city())&&rnd()<.7)f.dock=1;
+  if(lux&&rnd()<.6)f.theater=1;if(lux&&rnd()<.6)f.gym=1;if(lux&&rnd()<.45)f.court=1;if(lux&&rnd()<.5)f.guest=1;if((lux||k==='lake')&&isWater(cc||city())&&rnd()<.7)f.dock=1;
   if(lux&&rnd()<.4)f.wine=1;if(lux&&rnd()<.7)f.security=1;if(rnd()<.3)f.smart=1;if(['penthouse','ultra_ph','lux_apt'].includes(k)&&rnd()<.6){f.terrace=1;f.gym=1;}
   return f;}
 function genHome(k,ci){const c=CITIES[ci],D=HT[k];const rnd=sr(k+ci+S.year+Math.random());const beds=ri(D[4][0],D[4][1]);const sq=Math.round((D[5][0]+(D[5][1]-D[5][0])*rnd())/10)*10;
   const fixer=rnd()<.18;const cond=fixer?ri(12,40):ri(62,98);const ac=D[6][1]?+(D[6][0]+(D[6][1]-D[6][0])*rnd()).toFixed(2):0;
-  const midsq=(D[5][0]+D[5][1])/2;const price=Math.round(homeVal(D[3],c,sq,midsq,cond)*rf(.9,1.1)/1000)*1000;
+  const midsq=(D[5][0]+D[5][1])/2;const price=Math.round(homeVal(D[3],c,sq,midsq,cond,ci)*rf(.9,1.1)/1000)*1000;
   const street=`${ri(2,980)} ${pick(STREETS)} ${pick(SUFF)}`;const water=isWater(c);
-  return {lid:NID++,type:k,style:D[2],name:D[0],addr:street,ci,beds,baths:Math.max(1,Math.round(beds*rf(.8,1.3))),sqft:sq,acres:ac,floors:D[1]==='apt'?1:sq>6000?3:sq>2000?2:1,feat:featFor(k,rnd),cond,price,seed:street+ci,fixer,water,
+  return {lid:NID++,type:k,style:D[2],name:D[0],addr:street,ci,beds,baths:Math.max(1,Math.round(beds*rf(.8,1.3))),sqft:sq,acres:ac,floors:D[1]==='apt'?1:sq>6000?3:sq>2000?2:1,feat:featFor(k,rnd,c),cond,price,seed:street+ci,fixer,water,
     set:D[2]==='mansion'?(hasTag(c,'b')?'beach':hasTag(c,'l')?'lake':'lawn'):D[2]==='villa'&&hasTag(c,'b')?'beach':D[2]==='modern'&&hasTag(c,'d')?'desert':D[2]==='modern'&&hasTag(c,'s')?'snow':undefined};}
-function genMarket(){const c=city(),ci=M().city;const pool=Object.keys(HT).map(k=>[k,HT[k][8](c)]).filter(x=>x[1]>0);const out=[];
+function genMarket(ci0){const ci=ci0??M().city,c=CITIES[ci];const pool=Object.keys(HT).map(k=>[k,HT[k][8](c)]).filter(x=>x[1]>0);const out=[];
   for(let i=0;i<9&&pool.length;i++){const k=wpick(pool);out.push(genHome(k,ci));}
   return out.sort((a,b)=>a.price-b.price);}
 const isHome=a=>a.kind==='prop';
+const hci=()=>UI.hci??M().city;
+function marketFor(ci){if(ci===M().city){if(!S.market)S.market=genMarket();return S.market;}S.mkts=S.mkts||{};if(!S.mkts[ci]||S.mkts[ci].y!==S.year)S.mkts[ci]={y:S.year,list:genMarket(ci)};return S.mkts[ci].list;}
+function findListing(lid){for(const L_ of [S.market||[],...Object.values(S.mkts||{}).map(x=>x.list)]){const i=L_.findIndex(z=>z.lid===lid);if(i>=0)return [L_,i];}return [null,-1];}
 const homes=()=>S.assets.filter(isHome);
 const hDef=a=>HT[a.type]||HT.custom;
 function homeUpkeep(a){const c=CITIES[a.ci]||city();const cat=hDef(a)[1];let u=a.value*(cat==='apt'?.007:cat==='lux'?.012:.01)+a.value*(c.tax||.2)*.04;
@@ -3197,9 +3198,9 @@ function aHomes(){const m=M();if(UI.page&&UI.page.k==='home')return homePage(UI.
   if(own.length)h+=card(sh('Your properties',`<span class="badge2">${money(own.reduce((t,a)=>t+a.value,0))}</span>`)+`<div class="hgrid">${own.map(a=>homeCard(a,0,1)).join('')}</div>`);
   if((S.builds||[]).length)h+=card(sh('Under construction')+`<div class="list">${S.builds.map(b=>row(ich('building','sun',1),esc(b.spec.name),`${esc(CITIES[b.ci].n)} · year ${b.prog+1} of ${b.years} · budget ${money(b.cost)}`,`<span class="chip c-sun">${Math.round(b.prog/b.years*100)}%</span>`)).join('')}</div>`);
   if(m.age<18)return h+card('<p class="empty">You can buy property at 18.</p>');
-  h+=card(sh(`For sale in ${esc(c.n)}`,B(icon('refresh')+'New listings','relist',{},{cls:'btn ghost'}))+`<p class="note">Listings follow the local market (×${(S.econ.housing*lmkt(m.city)).toFixed(2)}). Fixer-uppers are cheap but need work.</p>`+
+  const hc=hci(),HC=CITIES[hc],mk=marketFor(hc);h+=card(sh(`For sale in ${esc(HC.n)}`,B(icon('refresh')+'New listings','relist',{},{cls:'btn ghost'}))+`<div class="form" style="margin:0 0 8px"><label class="field full">Shop in any city<select id="hcity">${cityOptions(hc)}</select></label></div><p class="note">${hc===m.city?'Where you live.':'You can own homes anywhere: rent them out, keep them as vacation homes, or move there later.'} Listings follow the local market (×${(S.econ.housing*lmkt(hc)).toFixed(2)}). Fixer-uppers are cheap but need work.</p>`+
     `<div class="chiprow">${[['all','All'],['apt','Apartments'],['house','Houses'],['lux','Luxury']].map(([k,l])=>`<button class="opt" data-a="hfilt" data-v="${k}" aria-pressed="${(UI.hf||'all')===k}">${l}</button>`).join('')}</div>`+
-    `<div class="hgrid">${(S.market||[]).filter(x=>(UI.hf||'all')==='all'||HT[x.type][1]===UI.hf).map(x=>homeCard(x)).join('')||'<p class="empty">Nothing in this category right now.</p>'}</div>`);
+    `<div class="hgrid">${mk.filter(x=>(UI.hf||'all')==='all'||HT[x.type][1]===UI.hf).map(x=>homeCard(x)).join('')||'<p class="empty">Nothing in this category right now.</p>'}</div>`);
   h+=card(row(ich('building','violet'),'Build your own home','Buy land, pick a style and features, hire an architect and a builder',B('Start','bhstart',{},{cls:'btn pri'})));
   h+=card(row(ich('briefcase','blue'),'Apartment buildings, offices, malls, hotels…','Commercial real estate lives in your Empire',B('Open Empire','atab',{v:'empire'},{cls:'btn'})));
   if((m.homeHist||[]).length)h+=card(sh('Past homes')+`<div class="list">${m.homeHist.slice().reverse().map(x=>row(ich('clock','blue',1),esc(x.n),`${esc(x.c)} · ${x.y1}–${x.y2} · paid ${money(x.p)} · sold ${money(x.s)}`,'')).join('')}</div>`);
@@ -3208,23 +3209,23 @@ const RENTT={basic:['Basic rental',.85,-2],nice:['Nice rental',1,0],luxury:['Lux
 H.rentpick=()=>{modal(`<h2>Your rental</h2><p class="lead">Pick how nice a place you rent. It changes your living costs and happiness.</p><div class="choices">${Object.entries(RENTT).map(([k,v])=>`<button class="choice alt" data-a="rentset" data-v="${k}">${v[0]}<small>Living costs ×${v[1]}${v[2]?` · happiness ${v[2]>0?'+':''}${v[2]}/yr`:''}</small></button>`).join('')}</div>${closeBtn()}`);};
 H.rentset=d=>{M().rentTier=d.v;closeModal();note(`You moved into a ${RENTT[d.v][0].toLowerCase()}.`);render();};
 H.hfilt=d=>{UI.hf=d.v;render();};
-H.relist=()=>{S.done=S.done||{};if((S.done.relist||0)>=3){toast('That’s everything on the market this year. More listings next year.');return;}S.done.relist=(S.done.relist||0)+1;S.market=genMarket();render();};
+H.relist=()=>{S.done=S.done||{};if((S.done.relist||0)>=3){toast('That’s everything on the market this year. More listings next year.');return;}S.done.relist=(S.done.relist||0)+1;const ci=hci();if(ci===M().city)S.market=genMarket();else{S.mkts=S.mkts||{};S.mkts[ci]={y:S.year,list:genMarket(ci)};}render();};
 H.lopen=d=>{UI.page={k:'list',id:+d.id};UI.view='assets';UI.atab='homes';render();window.scrollTo(0,0);};
 H.hopen=d=>{UI.page={k:'home',id:+d.id};UI.view='assets';UI.atab='homes';closeModal();render();window.scrollTo(0,0);};
 H.pageback=()=>{UI.page=null;render();};
 H.night=()=>{UI.night=!UI.night;render();};
 function specGrid(x){const c=CITIES[x.ci]||city();return `<div class="kv"><span>Location</span><b>${esc(x.addr?x.addr+', ':'')}${esc(cityLabel(c))}</b><span>Type</span><b>${esc((HT[x.type]||HT.custom)[0])}</b>${x.beds?`<span>Bedrooms</span><b>${x.beds}</b><span>Bathrooms</span><b>${x.baths}</b>`:''}<span>Size</span><b>${x.sqft.toLocaleString()} sq ft</b>${x.acres?`<span>Land</span><b>${x.acres} acres</b>`:''}<span>Floors</span><b>${x.floors||1}</b><span>Condition</span><b>${x.cond}/100</b></div><div class="chips" style="margin-top:10px">${featChips(x)}</div>`;}
 function gallery(x,art){return `<div class="gal">${art({...x},{night:!!UI.night})}<button class="galbtn" data-a="night">${UI.night?'☀︎ Day view':'☾ Night view'}</button></div>`;}
-function listingPage(lid){const m=M(),x=(S.market||[]).find(z=>z.lid===lid);if(!x){UI.page=null;return aHomes();}const D=HT[x.type];
+function listingPage(lid){const m=M(),[L0,i0]=findListing(lid),x=L0?L0[i0]:null;if(!x){UI.page=null;return aHomes();}const D=HT[x.type];
   const inc=(m.job?salary(m.job):0)+S.biz.reduce((t,b)=>t+Math.max(0,b.last||0),0)+reIncome();const mortOk=inc*6>=x.price*.8||netWorth()>x.price*2;
   return `<button class="back" data-a="pageback">${icon('left')}All listings</button>`+card(gallery(x,homeArt)+`<h2 style="margin-top:12px">${esc(D[0])}</h2><p class="hc-p" style="font-size:22px">${money(x.price)}</p>${specGrid(x)}
    <div class="kv" style="margin-top:10px"><span>Est. upkeep & taxes</span><b>${money(homeUpkeep({...x,value:x.price}))}/yr</b><span>Could rent for</span><b>${money(homeRent({...x,value:x.price}))}/yr</b></div>
    ${x.fixer?'<p class="note" style="margin-top:8px">This one needs serious work. Renovate it, then sell or rent it for more.</p>':''}
    <div class="btnrow" style="margin-top:12px">${B('Buy with cash','buyhome',{id:lid,mode:'cash'},{cls:'btn pri',dis:m.cash<x.price})}${B(`Mortgage · ${money(x.price*.2)} down`,'buyhome',{id:lid,mode:'mort'},{dis:m.cash<x.price*.2||!mortOk})}</div>${!mortOk?'<p class="note">A bank will lend about 6× your yearly income.</p>':''}`);}
-H.buyhome=d=>{const m=M(),i=(S.market||[]).findIndex(z=>z.lid===+d.id);if(i<0)return;const x=S.market[i];
+H.buyhome=d=>{const m=M(),[L0,i]=findListing(+d.id);if(i<0)return;const x=L0[i];
   if(d.mode==='cash'){if(m.cash<x.price)return;m.cash-=x.price;}else{if(m.cash<x.price*.2)return;m.cash-=x.price*.2;m.debt+=x.price*.8;}
   const a={id:NID++,kind:'prop',type:x.type,style:x.style,name:HT[x.type][0],addr:x.addr,ci:x.ci,city:CITIES[x.ci].n,beds:x.beds,baths:x.baths,sqft:x.sqft,acres:x.acres,floors:x.floors,feat:{...x.feat},cond:x.cond,value:x.price,paid:x.price,bought:S.year,seed:x.seed,set:x.set,interior:{},home:false,rented:false,rent:HT[x.type][7]};
-  S.assets.push(a);S.market.splice(i,1);m.c.homes++;const first=homes().length===1;
+  S.assets.push(a);L0.splice(i,1);m.c.homes++;const first=homes().length===1;
   if(!homes().some(z=>z.home)&&x.ci===m.city)a.home=true;
   const t=`You bought a ${a.name.toLowerCase()} at ${a.addr} for ${money(x.price)}${d.mode==='mort'?' with a mortgage':''}.`;L(t,'m');
   if(first)celebrate('Your first property!',`${a.name} · ${a.addr}. ${a.home?'Welcome home.':''}`,'home','mint');else if(x.price>=1e7)celebrate('A dream home!',`You bought a ${a.name.toLowerCase()} for ${money(x.price)}.`,'home','sun');
@@ -3234,7 +3235,7 @@ function homePage(id){const m=M(),a=S.assets.find(z=>z.id===id&&isHome(z));if(!a
    <div class="kv" style="margin-top:8px"><span>Estimated value</span><b>${money(a.value)}</b><span>You paid</span><b>${money(a.paid||a.value)}${a.bought?` in ${a.bought}`:''}</b><span>Gain/loss</span><b style="color:var(--${a.value>=(a.paid||a.value)?'mint':'coral'})">${a.value>=(a.paid||a.value)?'+':''}${money(a.value-(a.paid||a.value))}</b><span>Upkeep & taxes</span><b>${money(homeUpkeep(a))}/yr</b>${a.rented?`<span>Rent income</span><b>${money(homeRent(a))}/yr</b>`:''}</div>
    <div class="meter c-${a.cond<40?'coral':'mint'}" style="margin-top:10px">${icon('home')}<span>Condition</span><div class="track"><i style="width:${a.cond}%"></i></div><span class="v num">${a.cond}</span></div>`);
   h+=`<div class="tabs">${[['overview','Overview'],['interior','Interior'],['upgrade','Upgrades'],['staff','Staff']].map(([k,l])=>`<button data-a="htab" data-v="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div>`;
-  if(tab==='overview'){h+=card(specGrid(a)+`<div class="btnrow" style="margin-top:12px">${a.home?'<span class="chip c-mint">You live here</span>':B('Live here','hact',{id,op:'home'},{cls:'btn pri',dis:a.ci!==m.city})}${a.home?'':B(a.rented?'Stop renting':'Rent it out','hact',{id,op:'rent'})}${B('Sell','hsell',{id},{cls:'btn danger'})}</div>${a.ci!==m.city&&!a.home?'<p class="note">You can only live in a home in the city you live in.</p>':''}`);
+  if(tab==='overview'){h+=card(specGrid(a)+`<div class="btnrow" style="margin-top:12px">${a.home?'<span class="chip c-mint">You live here</span>':B('Live here','hact',{id,op:'home'},{cls:'btn pri',dis:a.ci!==m.city})}${a.home?'':B(a.rented?'Stop renting':'Rent it out','hact',{id,op:'rent'})}${B('Sell','hsell',{id},{cls:'btn danger'})}</div>${a.ci!==m.city&&!a.home?`<p class="note">This home is in ${esc(CITIES[a.ci].n)}. Move there to live in it.</p>${B(`Move to ${esc(CITIES[a.ci].n)}`,'movehome',{id},{cls:'btn'})}`:''}`);
     h+=card(sh('Renovate')+`<div class="list">${[['refresh','Refresh',.02,15],['remodel','Full remodel',.06,40],['gut','Gut renovation',.12,100]].map(([k,n,f,g])=>{const cost=Math.round(Math.max(8e3,a.value*f)/100)*100;return row(ich('wrench','sun',1),n,`Condition +${g===100?'to 100':g} · cost ${money(cost)}`,B('Do it','hreno',{id,k},{cls:'btn pri',dis:m.cash<cost||a.cond>=100}));}).join('')}</div>`);}
   if(tab==='interior'){h+=card(sh('Rooms')+`<p class="note">Kitchens and bathrooms add the most value. Fun rooms make you happier when you live here.</p><div class="rooms">${ROOMS.filter(r=>roomOk(a,r)).map(r=>{const cur=(a.interior||{})[r[0]];
       return `<div class="roomc">${roomArt(r[0],cur)}<b>${r[1]}</b><span class="mini">${cur?ITIER[cur][2]:'Standard'}</span><div class="btnrow">${Object.keys(ITIER).filter(t=>t!==cur).map(t=>B(`${ITIER[t][2]} ${money(roomCost(a,r,t))}`,'hroom',{id,r:r[0],t},{dis:m.cash<roomCost(a,r,t)})).join('')}</div></div>`;}).join('')}</div>`);}
@@ -3267,18 +3268,19 @@ H.saleacc=d=>{const s=UI.sale,o=s.offers[+d.i];if(!o)return;const m=M();const in
 /* build a home */
 function bhDefault(){return {name:'',style:'modern',plot:'medium',floors:2,beds:4,baths:3,garage:2,pool:'standard',land:'standard',intr:'premium',x:{office:1},arch:1,builder:1};}
 const BX=[['office','Home office',300,40e3],['gym','Gym',500,60e3],['theater','Cinema room',600,120e3],['gameroom','Game room',450,50e3],['guest','Guest house',1200,0],['court','Tennis/basketball court',0,90e3],['dock','Boat dock',0,80e3,'water'],['security','Security & gate',0,60e3],['smart','Smart home',0,40e3],['wine','Wine cellar',300,70e3],['showroom','Car showroom',1500,90e3],['solar','Solar roof',0,45e3]];
-function bhEstimate(b){const c=city();const pl=plotSizes.find(p=>p[0]===b.plot);const land=Math.round(landAcre(c)*pl[2]);
+function bhEstimate(b){const ci=b.ci??M().city,c=CITIES[ci],here=ci===M().city;const pl=plotSizes.find(p=>p[0]===b.plot);const la=here?landAcre(c):landAcreC(c);const land=Math.round(la*pl[2]);
   let sq=500+b.beds*420+b.baths*110+b.garage*240+(b.floors-1)*200;BX.forEach(x=>{if(b.x[x[0]])sq+=x[2];});
-  const psf=HSTYLE_COST[b.style]*Math.max(.55,colM())*[.85,1,1.25][b.builder];let build=sq*psf;BX.forEach(x=>{if(b.x[x[0]])build+=x[3];});
+  const psf=HSTYLE_COST[b.style]*Math.max(.55,here?colM():c.col)*[.85,1,1.25][b.builder];let build=sq*psf;BX.forEach(x=>{if(b.x[x[0]])build+=x[3];});
   build+={none:0,standard:70e3,infinity:220e3,indoor:450e3}[b.pool]+{basic:15e3,standard:60e3,lush:220e3}[b.land]+sq*{budget:20,premium:70,luxury:180}[b.intr];build*=[1,1.06,1.15][b.arch];
   const years=sq<4500?1:sq<11000?2:3;return {land,build:Math.round(build/1000)*1000,sq,years:Math.max(1,years-(b.builder===2&&years>1?1:0)),acres:pl[2],total:Math.round((land+build)/1000)*1000};}
-function openBuild(){const b=UI.bh=UI.bh||bhDefault();const c=city(),e=bhEstimate(b),m=M();const okPlot=p=>!(c.t==='B'&&['estate','ranch'].includes(p[0]))&&!(['C','S','X'].includes(c.t)&&p[0]==='ranch');
+function openBuild(){const b=UI.bh=UI.bh||bhDefault();if(b.ci==null)b.ci=M().city;const c=CITIES[b.ci],e=bhEstimate(b),m=M();const la=b.ci===m.city?landAcre(c):landAcreC(c);const okPlot=p=>!(c.t==='B'&&['estate','ranch'].includes(p[0]))&&!(['C','S','X'].includes(c.t)&&p[0]==='ranch');
   const ch=(k,v,l,cur)=>`<button class="opt" data-a="bhset" data-k="${k}" data-v="${v}" aria-pressed="${String(cur)===String(v)}">${l}</button>`;
   const num=(k,l,min,max)=>`<div class="row"><div class="tx"><div class="t">${l}</div></div><div class="r"><button class="btn" data-a="bhnum" data-k="${k}" data-d="-1" ${b[k]<=min?'disabled':''}>−</button><b class="num" style="min-width:26px;text-align:center">${b[k]}</b><button class="btn" data-a="bhnum" data-k="${k}" data-d="1" ${b[k]>=max?'disabled':''}>+</button></div></div>`;
   const prev={style:b.style==='mediterranean'?'villa':b.style==='historic'?'historic':b.style,feat:{pool:b.pool!=='none'?b.pool:'',garage:b.garage,court:b.x.court,guest:b.x.guest,dock:b.x.dock,solar:b.x.solar},cond:100,seed:'build'+b.style+b.floors,name:b.name||'Your new home',set:b.style==='chalet'?'snow':hasTag(c,'b')&&['modern','contemporary','mediterranean'].includes(b.style)?'beach':undefined};
   modal(`<h2>Build a home in ${esc(c.n)}</h2>${homeArt(prev)}
+   <label class="field full">Where to build<select id="bhcity">${cityOptions(b.ci)}</select></label>
    <label class="field full">Name it<input type="text" id="bhname" maxlength="32" placeholder="e.g. Casa Sol" value="${esc(b.name)}"></label>
-   <p class="eyebrow">Land</p><div class="opts">${plotSizes.filter(okPlot).map(p=>ch('plot',p[0],`${p[1]} · ${money(landAcre(c)*p[2])}`,b.plot)).join('')}</div>
+   <p class="eyebrow">Land</p><div class="opts">${plotSizes.filter(okPlot).map(p=>ch('plot',p[0],`${p[1]} · ${money(la*p[2])}`,b.plot)).join('')}</div>
    <p class="eyebrow">Architectural style</p><div class="opts">${STYLES.map(([k,l])=>ch('style',k,l,b.style)).join('')}</div>
    <div class="list">${num('floors','Floors',1,4)}${num('beds','Bedrooms',1,14)}${num('baths','Bathrooms',1,16)}${num('garage','Garage spaces',0,12)}</div>
    <p class="eyebrow">Pool</p><div class="opts">${[['none','None'],['standard','Pool'],['infinity','Infinity pool'],['indoor','Indoor pool']].map(([k,l])=>ch('pool',k,l,b.pool)).join('')}</div>
@@ -3295,7 +3297,7 @@ H.bhset=d=>{bhKeepName();const b=UI.bh;b[d.k]=['arch','builder'].includes(d.k)?+
 H.bhnum=d=>{bhKeepName();const b=UI.bh;b[d.k]=b[d.k]+ +d.d;openBuild();};
 H.bhx=d=>{bhKeepName();const b=UI.bh;b.x[d.v]=b.x[d.v]?0:1;openBuild();};
 H.bhgo=d=>{bhKeepName();const m=M(),b=UI.bh,e=bhEstimate(b);if(d.mode==='cash'){if(m.cash<e.total)return;m.cash-=e.total;}else{if(m.cash<e.total*.3)return;const inc=(m.job?salary(m.job):0)+reIncome();if(inc*7<e.total*.7&&netWorth()<e.total*1.5){toast('The bank won’t finance this. You need more income or assets.');return;}m.cash-=e.total*.3;m.debt+=e.total*.7;}
-  S.builds=S.builds||[];const name=b.name.trim()||`${pick(STREETS)} ${pick(['House','Residence','Estate','Villa','Retreat','Manor'])}`;S.builds.push({id:NID++,ci:m.city,spec:{...b,x:{...b.x},name},est:e,cost:e.total,years:e.years,prog:0});
+  S.builds=S.builds||[];const name=b.name.trim()||`${pick(STREETS)} ${pick(['House','Residence','Estate','Villa','Retreat','Manor'])}`;S.builds.push({id:NID++,ci:b.ci??m.city,spec:{...b,x:{...b.x},name},est:e,cost:e.total,years:e.years,prog:0});
   UI.bh=null;closeModal();const t=`Construction started on ${name}: ${money(e.total)}, about ${plural(e.years,'year')}.`;L(t,'g');note(t);render();};
 function buildTick(){const m=M();if(!S.builds||!S.builds.length)return;for(const b of [...S.builds]){b.prog++;const risk=[.35,.15,.05][b.spec.builder];
   if(chance(risk)){if(chance(.5)){b.years++;L(`Construction on ${b.spec.name} was delayed. Another year to go.`,'b');}else{const x=Math.round(b.cost*rf(.06,.2)/1000)*1000;b.cost+=x;if(m.cash>=x)m.cash-=x;else m.debt+=x;L(`${b.spec.name} ran ${money(x)} over budget.`,'b');}}
@@ -3729,7 +3731,7 @@ function pjEstimate(pj){const T=RT[pj.type],c=CITIES[pj.ci];const z=zonesFor(pj.
   const fl=T[3]==='floors'?pj.size:floorsOf(pj.type,pj.size);const acres=T[8]?Math.max(.25,units*T[8]):clamp(.12+units*T[5]*costF(c)/250e6,.12,5);
   const land=Math.round(landAcreC(c)*z.land*acres/1000)*1000;const amenF=Object.keys(pj.amen).reduce((t,k)=>{const a=(AMEN[T[1]]||[]).find(x=>x[0]===k);return t+(a?a[2]:0);},0);
   const heightF=fl&&fl>40?1+(fl-40)/200:1;let build=units*T[5]*costF(c)*q[2]*(1+amenF)*[.88,1,1.18][pj.builder]*heightF*(1+Math.min(3,reStaff('arch'))*.01);if(T[3]==='floors'&&['sky_mixed','landmark'].includes(pj.type))build=pj.size*T[5]*costF(c)*q[2]*(1+amenF)*[.88,1,1.18][pj.builder]*heightF;
-  build=Math.round(build/1e4)*1e4;const total=land+build;const years=Math.max(1,T[9]+(fl>80?1:0)-(pj.builder===2&&T[9]>1?1:0));
+  if(S.re&&S.re.co&&S.re.co.offices.includes(pj.ci))build*=.95;build=Math.round(build/1e4)*1e4;const total=land+build;const years=Math.max(1,T[9]+(fl>80?1:0)-(pj.builder===2&&T[9]>1?1:0));
   const fake={type:pj.type,ci:pj.ci,zone:z.k,q:pj.q,amen:pj.amen,rent:1,cond:100,age:0,size:pj.size,occ:0,value:total,basis:total,dev:pj.dev};
   let rev=0,occ=0,sales=0;if(isSell(pj.type)&&pj.mode==='sell'){sales=Math.round(salePrice(pj.type,c,q)*units*(T[3]==='floors'?1:1));}else{occ=occTarget(fake);fake.occ=occ;rev=propRev(fake);}
   const opex=rev?propOpex({...fake,value:total},rev):0;const noi=rev-opex;const loanAmt=Math.round(total*pj.loan/100);const pAmt=Math.round(total*pj.partner/100);const cash=total-loanAmt-pAmt;const rate=(S.econ.rate+2)/100;
@@ -3743,7 +3745,7 @@ function eBuild(){const m=M(),R=S.re;const pj=UI.pj=UI.pj||pjDefault();const zs=
   const prev={type:pj.type,floors:e.fl,stage:3,color:R.co.color,style:pj.style,name:pj.name||T[0],seed:'pj'+pj.type+pj.size,cluster:pj.type==='triplex'?3:pj.type==='duplex'?2:1,towers:pj.type==='masterplan'?3:0};
   let h=card(`<div class="gal">${bldArt(prev)}</div>
    <label class="field full">Project name<input type="text" id="pjname" maxlength="36" placeholder="${esc(T[0])}" value="${esc(pj.name)}"></label>
-   <p class="eyebrow">City</p><div class="opts">${pjCities().map(ci=>ch('pjset','ci',ci,esc(CITIES[ci].n),pj.ci)).join('')}</div>${pjCities().length===1?'<p class="note">Open offices in other cities from the Company tab to build there.</p>':''}
+   <label class="field full">City<select id="pjcity">${cityOptions(pj.ci)}</select></label>${R.co.offices.includes(pj.ci)?'<p class="note">You have an office here: building costs 5% less.</p>':pj.ci!==M().city?'<p class="note">Tip: an office in this city cuts building costs 5%.</p>':''}
    <p class="eyebrow">Zone</p><div class="zones">${zs.map(x=>`<button class="zone" data-a="pjset" data-k="zone" data-v="${x.k}" aria-pressed="${pj.zone===x.k}"><b>${x.n}</b><span>${money(landAcreC(CITIES[pj.ci])*x.land)}/acre</span><span>Up to ${x.maxFl} floors</span><span>${RCAT[T[1]][0]} demand ${Math.round(cityDem(pj.ci,T[1])*(x.dem[T[1]]||1)*100)}%</span></button>`).join('')}</div>
    <p class="eyebrow">What to build</p><div class="chiprow">${Object.entries(RCAT).map(([k,v])=>ch('pjcat','cat',k,v[0],pj.cat)).join('')}</div>
    <div class="opts" style="margin-top:8px">${Object.entries(RT).filter(([k,v])=>v[1]===pj.cat).map(([k,v])=>{const w=typeOk(k,pj.ci,null);return ch('pjtype','type',k,v[0]+(rk<v[10]-1?' 🔒':''),pj.type,!!w);}).join('')}</div>
@@ -3791,7 +3793,7 @@ function genREMarket(ci){const c=CITIES[ci],R=RE();const zs=zonesFor(ci);const o
     out.push(p);}
   return out.sort((a,b)=>a.price-b.price);}
 function eBuy(){const m=M(),R=S.re;const ci=UI.bci??m.city;if(!R.mkt[ci]||R.mkt[ci].y!==S.year)R.mkt[ci]={y:S.year,list:genREMarket(ci)};
-  return card(sh(`For sale in ${esc(CITIES[ci].n)}`)+`<div class="opts">${pjCities().map(x=>`<button class="opt" data-a="bci" data-v="${x}" aria-pressed="${ci===x}">${esc(CITIES[x].n)}</button>`).join('')}</div><p class="note" style="margin-top:6px">Fixer-uppers are cheap because they’re run down and half empty. Renovate them and raise the occupancy.</p>
+  return card(sh(`For sale in ${esc(CITIES[ci].n)}`)+`<div class="form" style="margin:0"><label class="field full">City<select id="bcicity">${cityOptions(ci)}</select></label></div><p class="note" style="margin-top:6px">Fixer-uppers are cheap because they’re run down and half empty. Renovate them and raise the occupancy.</p>
    <div class="vgrid" style="margin-top:8px">${R.mkt[ci].list.map(p=>`<button class="vcard" data-a="rlist" data-id="${p.id}">${bldArt({...p,color:'#9AA5B1'})}<b>${esc(p.name)}</b><span class="mini">${esc(RT[p.type][0])} · ${dispUnits(p.type,p.size).toLocaleString()} ${unitLabel(p.type)}</span><span class="mini">${money(p.price)} · ${Math.round(p.occ*100)}% occupied${p.fixer?' · <b style="color:var(--coral)">fixer-upper</b>':''}</span></button>`).join('')}</div>`);}
 H.bci=d=>{UI.bci=+d.v;render();};H.rlist=d=>{UI.page={k:'rlist',id:+d.id};render();window.scrollTo(0,0);};
 function rListPage(id){const m=M(),R=S.re;const ci=UI.bci??m.city;const p=(R.mkt[ci]||{list:[]}).list.find(x=>x.id===id);if(!p){UI.page=null;return aEmpire();}const T=RT[p.type];const rev=propRev(p),opex=propOpex(p,rev),noi=rev-opex;
@@ -4583,6 +4585,233 @@ const _vMore=vMore;vMore=function(){const s=UI.sub;const h=_vMore();if(s)return 
 /* ---------- more alerts ---------- */
 const ALERT_AW=(sp,n,wt)=>{const D=SPORTS[sp.sp];if(wt<2||n.includes(D.champ))return;const big=wt>=4;celebrate(big?`You won the ${n}!`:n.endsWith('champions')?`${n}!`:`${n}!`,`${D.n} · ${S.year}${sp.team?' · '+sp.team:sp.college?' · '+sp.college.name:''}`,'trophy',big?'sun':'blue');};
 
+/* =========================================================
+   v8: build anywhere · Fame & Social Media · Empire dashboard
+   ========================================================= */
+H.movehome=d=>{const m=M(),a=S.assets.find(z=>z.id===+d.id);if(!a)return;H.move({i:a.ci});if(M().city===a.ci){homes().forEach(z=>z.home=false);a.home=true;a.rented=false;const t=`You moved into ${a.addr||'your '+a.name.toLowerCase()}.`;L(t,'g');note(t);render();}};
+
+/* ---------- fame ---------- */
+function fame(){const m=S.me;if(!m)return 0;return Math.round(clamp(Math.max(0,Math.log10((m.followers||0)+1)*12.5-10)+(m.renown||0)));}
+const FAMEL=[[5,'Unknown'],[20,'Small following'],[35,'Rising creator'],[50,'Recognized personality'],[65,'Famous'],[80,'Major celebrity'],[92,'Superstar'],[101,'Global icon']];
+const fameLabel=(f=fame())=>FAMEL.find(x=>f<x[0])[1];
+function renownTick(){const m=M();let t=0;const j=m.job;if(j&&JOBS[j.id]){if(JOBS[j.id].fame)t+=4+j.level*3;else if(j.level>=3)t+=4;if(j.id==='politics')t+=4+j.level*3;}
+  if(m.sport){if(m.sport.stage==='pro')t+=12;else if(m.sport.stage==='retired')t+=6;else if(m.sport.stage==='college')t+=3;t+=Math.min(8,((m.sport.awards||[]).filter(a=>a.w>=3).length));}
+  const nw=netWorth();if(nw>1e9)t+=16;else if(nw>1e8)t+=9;else if(nw>1e7)t+=4;if(S.re&&S.re.props&&S.re.props.length>20)t+=3;if(m.soc&&m.soc.media)t+=m.soc.media.lvl*3;
+  m.renown=Math.round(((m.renown||0)+(Math.min(30,t)-(m.renown||0))*.25)*10)/10;}
+
+/* ---------- platforms ---------- */
+// type: [key,label,attr,skill,viral,req,reqText,rep]
+const PLAT={
+ snap:{n:'Snapgram',ic:'star',c:'violet',unit:'followers',d:'Photos, stories and lifestyle posts',eng:.09,conv:.03,
+  types:[['selfie','Selfie','looks','',1],['ootd','Outfit of the day','looks','design',1],['food','Food pic','creativity','cooking',1],['travel','Travel photo','creativity','camera',1.3,()=>M().trips.length>0,'Take a trip first'],
+   ['lux','Luxury flex','looks','',1.6,()=>hasLux(),'Own a nice car, home, boat or jet'],['fit','Gym progress','fitness','',1.1],['story','Behind the scenes','social','',.8],['collab','Collab with a creator','social','',1.5,a=>a.f>=5e3,'Reach 5K followers']]},
+ view:{n:'ViewTube',ic:'game',c:'coral',unit:'subscribers',d:'Long videos, ad revenue and a back catalog',eng:.25,conv:.012,
+  types:[['vlog','Vlog','charisma','camera',1],['tut','Tutorial','smarts','teaching',.9],['game','Gaming video','tech','',1],['sketch','Comedy sketch','creativity','comedy',1.3],['review','Product review','smarts','writing',1],['doc','Mini documentary','creativity','story',1.2],['chal','Challenge video','confidence','',1.5],['music','Music video','creativity','vocals',1.2]]},
+ clip:{n:'Clipz',ic:'zap',c:'teal',unit:'followers',d:'Short videos that can blow up overnight',eng:.18,conv:.02,
+  types:[['dance','Dance trend','fitness','',1.2],['skit','Short skit','creativity','comedy',1.3],['trend','Jump on a trend','social','',1.1],['hack','Life hack','smarts','',1],['story','Story time','charisma','acting',1.1],['duet','Duet another creator','social','',1.2],['pov','POV video','creativity','acting',1.2]]},
+ pod:{n:'Earwave',ic:'music',c:'blue',unit:'listeners',d:'Podcast episodes, ad reads and memberships',eng:.5,conv:.02,
+  types:[['solo','Solo episode','charisma','speaking',.7],['guest','Interview a guest','social','speaking',1],['celeb','Celebrity guest','social','speaking',1.6,()=>fame()>=30,'Reach 30 fame'],['deep','Deep-dive episode','smarts','research',.9],['debate','Debate episode','smarts','debate',1.1],['live','Live show taping','confidence','stage',1.2,a=>a.f>=2e4,'Reach 20K listeners']]},
+ live:{n:'StreamDen',ic:'activity',c:'sun',unit:'followers',d:'Live streams, subs and donations',eng:.06,conv:.03,
+  types:[['game','Gaming stream','tech','',1],['chat','Just chatting','charisma','',.9],['irl','IRL stream','confidence','',1.2],['music','Music stream','creativity','vocals',1],['char','Charity stream','social','',1.1],['mara','24-hour marathon','discipline','',1.4]]},
+ chir:{n:'Chirper',ic:'edit',c:'mint',unit:'followers',d:'Quick posts, threads and hot takes',eng:.12,conv:.01,
+  types:[['joke','Joke','creativity','comedy',1.1],['thread','Thread','smarts','writing',1],['news','React to the news','smarts','',1],['reply','Reply to a celebrity','confidence','',1.3],['hot','Hot take','confidence','',1.8,0,0,-3],['meme','Meme','creativity','',1.2]]}};
+const PK=Object.keys(PLAT);
+const VCAT=[['vlog','Lifestyle',4],['game','Gaming',3],['tech','Tech',9],['fin','Finance',14],['edu','Education',7],['comedy','Comedy',3.5],['beauty','Beauty',5],['fit','Fitness',6],['food','Food',5],['music','Music',2.5]];
+const PTOP=[['comedy','Comedy'],['news','News & politics'],['true','True crime'],['biz','Business'],['sport','Sports'],['health','Health'],['culture','Pop culture'],['tech','Tech']];
+const GEAR=[['ring','Ring light',150,3,'snap clip live'],['umic','USB microphone',150,4,'pod live view'],['drone','Camera drone',1200,4,'view snap'],['cam','Mirrorless camera',2200,6,'snap view clip'],['pc','Editing computer',3000,6,'view clip live'],
+ ['smic','Studio microphones',2500,7,'pod live'],['cine','Cinema camera',25000,9,'view snap'],['studio','Home studio build-out',80000,10,'snap view clip pod live chir']];
+const SSTAFF=[['editor','Video editor',55e3,'+8 quality on ViewTube, Clipz and StreamDen'],['photo','Photographer',50e3,'+8 quality on Snapgram'],['producer','Podcast producer',60e3,'+8 quality on Earwave'],
+ ['manager','Social media manager',80e3,'Posts for you so your accounts never go quiet'],['agent','Talent agent',0,'Better sponsors and negotiation · takes 10%'],['pr','Publicist',90e3,'Softens controversies and lifts your reputation']];
+const SBRANDS=['Glowly Skincare','FuelUp Energy','Kickstep Sneakers','MealCrate','CoinPurse App','Raidbound Mobile','VitaZing Gummies','NordShield VPN','Brewtopia Coffee','Lux Lane Watches','Zoomly Rideshare','Pawsome Pet Food','SnugSleep Mattress','Hydra Bottles','FitForge Gym','Crispy Cluck','LensKart Glasses','StreamBox TV'];
+const MS=[1e3,1e4,1e5,1e6,1e7,1e8];
+const PLAQ={1e5:'Silver Creator Plaque',1e6:'Gold Creator Plaque',1e7:'Diamond Creator Plaque',1e8:'Ruby Creator Plaque'};
+const hasLux=()=>S.assets.some(a=>(isCar(a)&&a.value>=8e4)||isBoat(a)||isAir(a)||(isHome(a)&&a.value>=2e6));
+const fmtN=n=>n>=1e9?(n/1e9).toFixed(n>=1e10?0:1)+'B':n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+'M':n>=1e3?(n/1e3).toFixed(n>=1e4?0:1)+'K':String(Math.round(n));
+
+function SOC(){const m=M();if(!m.soc)m.soc={acc:{},gear:[],staff:{},offers:[],deals:[],rep:55,merch:0,media:null,lastF:m.followers||0,off:m.followers||0,life:0,yr:{},hist:[],posts:[]};const s=m.soc;s.acc=s.acc||{};s.yr=s.yr||{};return s;}
+const accs=()=>{const s=SOC();return PK.filter(k=>s.acc[k]).map(k=>[k,s.acc[k]]);};
+const socTotal=()=>accs().reduce((t,[,a])=>t+a.f,0);
+/* m.followers stays the game-wide audience total; platform counts absorb outside gains/losses */
+function socSync(){const m=M(),s=SOC();const A=accs();const f=m.followers||0;const d=f-(s.lastF??f);
+  if(A.length&&d){const tot=socTotal()||1;A.forEach(([,a])=>{a.f=Math.max(0,Math.round(a.f+d*(a.f+1)/(tot+A.length)));});}
+  const sum=socTotal();s.off=Math.max(0,(s.off||0)+(A.length?0:d));m.followers=Math.max(0,Math.round(sum+(s.off||0)));s.lastF=m.followers;}
+function socAdd(a,n){const m=M(),s=SOC();a.f=Math.max(0,Math.round(a.f+n));m.followers=Math.max(0,Math.round(socTotal()+(s.off||0)));s.lastF=m.followers;}
+
+function gearB(k){const s=SOC();return Math.min(25,s.gear.reduce((t,g)=>{const G=GEAR.find(x=>x[0]===g.k);return t+(G&&G[4].includes(k)?G[3]:0);},0));}
+function staffB(k){const st=SOC().staff;return ((st.editor&&['view','clip','live'].includes(k))||(st.photo&&k==='snap')||(st.producer&&k==='pod'))?8:0;}
+function postQ(k,a,T){const m=M();const at=m.s[T[2]]||50,sk=T[3]?skv(T[3]):0;const fat=Math.max(0,(a.fat[T[0]]||0)-2)*5+Math.max(0,a.ny-14)*1.5;
+  return Math.round(clamp(12+at*.4+sk*.25+gearB(k)+staffB(k)+(a.niche===T[0]?6:0)+(hasT('creative')?5:0)-fat+rf(-10,10),3,100));}
+function socJoin(k){const m=M(),s=SOC();if(s.acc[k])return s.acc[k];const nm=(m.first+(m.last||'')).toLowerCase().replace(/[^a-z0-9]/g,'');
+  const a=s.acc[k]={f:0,on:S.year,handle:'@'+nm+(chance(.5)?ri(1,99):''),fat:{},ny:0,posts:0,vids:0,views:0,earn:0,pend:0,mon:0,ms:[],hist:[],avg:0,cat:k==='view'?'vlog':'',topic:k==='pod'?'comedy':'',members:0,subs:0,loyal:50,niche:''};
+  // move some of your existing audience onto the new platform
+  const off=s.off||0;if(off>0){const mv=Math.round(off*(accs().length===1?.6:.25));s.off=off-mv;a.f+=mv;}socAdd(a,0);return a;}
+
+/* ---------- posting ---------- */
+function socPost(k,tk,auto){const m=M(),s=SOC(),P=PLAT[k],a=s.acc[k];if(!a)return null;const T=P.types.find(x=>x[0]===tk);if(!T)return null;
+  socSync();const q=postQ(k,a,T);a.fat[tk]=(a.fat[tk]||0)+1;a.ny++;a.posts++;
+  const tail=k==='clip'?.05:k==='chir'?.035:k==='snap'?.025:.02;const vir=chance(Math.max(0,tail+q/1800+luckB()/2)*(T[4]||1));
+  let reach=a.f*P.eng*(.35+q/80)+60*Math.pow(1+q/25,2)*(k==='clip'?3:1);if(vir)reach*=k==='clip'?rf(15,200):rf(6,60);if(s.rep<30)reach*=.8;reach=Math.round(reach*rf(.7,1.3));
+  let gain=Math.round(reach*P.conv*(.4+q/70));if(q<25&&a.f>500)gain=-Math.round(a.f*rf(.002,.01));
+  let earn=0;
+  if(k==='view'){a.vids++;const rpm=(VCAT.find(c=>c[0]===a.cat)||VCAT[0])[2];if(a.mon)earn=reach/1000*rpm*.55;}
+  if(k==='clip'&&a.f>=1e4)earn=reach/1000*rf(.02,.05);
+  if(k==='pod'&&a.f>=1e3)earn=reach/1000*rf(18,26)*1.5;
+  if(k==='live'){const av=Math.round(a.f*rf(.02,.05)*(q/60));a.peak=Math.max(a.peak||0,Math.round(av*rf(1.5,4)));a.avg=Math.round((a.avg||av)*.6+av*.4);if(a.f>=50)earn=av*rf(.15,.6)*(T[0]==='mara'?4:1);if(T[0]==='char'){s.rep=clamp(s.rep+2);sAdd('karma',2);earn=0;}a.loyal=clamp(a.loyal+(q-50)/20);}
+  if(k==='chir'&&a.f>=5e4)earn=reach/1000*rf(.005,.012);
+  if(T[7]){const r=chance(.5)?T[7]:-T[7]*.6;s.rep=clamp(s.rep+r*(s.staff.pr?.5:1));if(r<0&&chance(.15)){gain=Math.round(gain*.3);S.queue.push({id:'soc_hotbacklash'});}}
+  earn=Math.round(earn);a.pend+=earn;a.views+=reach;socAdd(a,gain);
+  const deal=s.deals.find(d=>d.p===k&&d.done<d.posts);if(deal)deal.done++;
+  if(!auto){skGain(T[3]||'writing',1);sAdd('creativity',.5);if(T[0]==='fit')sAdd('fitness',.5);}
+  const r={y:S.year,k,t:T[1],q,views:reach,gain,earn,vir,deal:deal?deal.brand:''};s.posts.unshift(r);if(s.posts.length>40)s.posts.length=40;a.last=r;msCheck(k,a);
+  if(k==='view'&&!a.mon&&a.f>=1e3&&a.vids>=10){a.mon=1;celebrate('You’re monetized!',`ViewTube will now pay you a share of the ad money on your videos.`,'dollar','mint');}
+  return r;}
+function msCheck(k,a){const P=PLAT[k];MS.forEach(n=>{if(a.f>=n&&!a.ms.includes(n)){a.ms.push(n);if(n>=1e4){const pl=k==='view'&&PLAQ[n];celebrate(`${fmtN(n)} ${P.unit}!`,pl?`ViewTube sent you the ${pl}.`:`${P.n} · ${a.handle}`,pl?'award':'star',n>=1e6?'sun':'violet');L(`You hit ${fmtN(n)} ${P.unit} on ${P.n}.`,'g');}}});}
+H.spost=d=>{const m=M();if(m.prison){toast('No phones in prison.');return;}if(m.age<13){toast('You need to be 13.');return;}const k=d.p,a=SOC().acc[k];if(!a)return;const T=PLAT[k].types.find(x=>x[0]===d.t);
+  if(T[5]&&!T[5](a)){toast(T[6]);return;}const r=socPost(k,d.t);if(!r)return;
+  note(`${r.vir?'It went viral! ':''}${T[1]}: ${fmtN(r.views)} views, ${r.gain>=0?'+':''}${fmtN(Math.abs(r.gain))}${r.gain<0?' lost':''} ${PLAT[k].unit}${r.earn?`, ${money(r.earn)} pending`:''}.`);
+  if(r.vir){L(`Your ${T[1].toLowerCase()} on ${PLAT[k].n} went viral: ${fmtN(r.views)} views.`,'g');if(chance(.35))S.queue.push({id:'soc_viral',ctx:{k,v:r.views}});}render();};
+H.sjoin=d=>{const m=M();if(m.age<13){toast('You need to be 13.');return;}const a=socJoin(d.p);L(`You joined ${PLAT[d.p].n} as ${a.handle}.`,'a');note(`Welcome to ${PLAT[d.p].n}!`);UI.sub='splat';UI.splat=d.p;UI.sotab='create';render();window.scrollTo(0,0);};
+H.splat=d=>{UI.view='assets';UI.sub='splat';UI.splat=d.p;UI.sotab=d.t||'overview';UI.page=null;render();window.scrollTo(0,0);};
+H.sotab=d=>{UI.sotab=d.v;render();};
+H.sset=d=>{const a=SOC().acc[d.p];if(!a)return;a[d.k]=d.v;render();};
+H.sdel=d=>{const s=SOC(),a=s.acc[d.p];if(!a)return;s.off=(s.off||0)+Math.round(a.f*.3);delete s.acc[d.p];s.deals=s.deals.filter(x=>x.p!==d.p);socAdd({f:0},0);L(`You deleted your ${PLAT[d.p].n} account.`,'n');UI.sub='social';render();};
+H.sbreak=d=>{const a=SOC().acc[d.p];if(!a)return;a.brk=a.brk?0:1;note(a.brk?'You’re taking a break. Expect to lose some followers.':'You’re back.');if(a.brk){sAdd('stress',-8);sAdd('happy',3);}render();};
+function socSel(el){const [_,p,k]=el.id.split('-');const a=SOC().acc[p];if(a){a[k]=el.value;render();}}
+
+/* ---------- money, gear, staff, sponsors ---------- */
+H.sgear=d=>{const m=M(),s=SOC(),G=GEAR.find(x=>x[0]===d.k);if(!G||s.gear.some(g=>g.k===G[0]))return;if(m.cash<G[2]){toast(`You need ${money(G[2])}.`);return;}m.cash-=G[2];s.gear.push({k:G[0],paid:G[2],y:S.year});note(`You bought a ${G[1].toLowerCase()}.`);render();};
+H.sstaff=d=>{const s=SOC();const on=!s.staff[d.k];s.staff[d.k]=on?1:0;const S_=SSTAFF.find(x=>x[0]===d.k);note(on?`You hired a ${S_[1].toLowerCase()}.`:`You let your ${S_[1].toLowerCase()} go.`);render();};
+function offerGen(){const m=M(),s=SOC();s.offers=s.offers.filter(o=>o.y===S.year);accs().forEach(([k,a])=>{const min=k==='snap'?5e3:1e4;if(a.f<min||a.brk)return;
+  const n=(chance(.6+(s.staff.agent?.25:0))?1:0)+(a.f>=1e5&&chance(.5)?1:0)+(a.f>=1e6?1:0);for(let i=0;i<n;i++){const rate={snap:.012,view:.025,clip:.006,pod:.03,live:.012,chir:.004}[k];const posts=ri(1,4);
+   const pay=Math.round(a.f*rate*posts*(.5+s.rep/100)*(s.staff.agent?1.25:1)*rf(.9,1.6)/50)*50;s.offers.push({id:NID++,y:S.year,p:k,brand:pick(SBRANDS),posts,pay,sketchy:chance(.14),neg:0});}});}
+H.soffer=d=>{const m=M(),s=SOC(),o=s.offers.find(x=>x.id===+d.id);if(!o)return;s.offers=s.offers.filter(x=>x!==o);
+  if(d.op==='yes'){s.deals.push({...o,done:0});note(`Deal signed with ${o.brand}: ${o.posts} post${o.posts>1?'s':''} for ${money(o.pay)}.`);L(`You signed a sponsorship with ${o.brand}.`,'g');}
+  else if(d.op==='neg'){const p=clamp(.35+m.s.biz/250+m.s.charisma/400+(s.staff.agent?.2:0)+luckB(),.05,.9);if(chance(p)){o.pay=Math.round(o.pay*rf(1.2,1.5)/50)*50;o.neg=1;s.offers.push(o);note(`${o.brand} raised the offer to ${money(o.pay)}.`);}else note(`${o.brand} walked away.`);}
+  else note(`You turned down ${o.brand}.`);render();};
+H.smerch=()=>{const m=M(),s=SOC();const cost=[25e3,25e4,25e5][s.merch||0];if(s.merch>=3)return;if(m.cash<cost){toast(`You need ${money(cost)}.`);return;}m.cash-=cost;s.merch=(s.merch||0)+1;
+  const t=['You launched a merch line.','Your merch is now in stores nationwide.','You built a full apparel brand.'][s.merch-1];L(t,'g');note(t);if(s.merch===1)celebrate('Merch drop!','Your first line of merch is live.','shirt','violet');render();};
+const MEDIA=[['Production company',5e5,50],['Studio lot',8e6,65],['Streaming network',8e7,80]];
+H.smedia=()=>{const m=M(),s=SOC();const lv=s.media?s.media.lvl:0;if(lv>=3)return;const M_=MEDIA[lv];if(fame()<M_[2]){toast(`Reach ${M_[2]} fame first.`);return;}if(m.cash<M_[1]){toast(`You need ${money(M_[1])}.`);return;}
+  m.cash-=M_[1];if(!s.media)s.media={lvl:0,name:`${m.last||m.first} Media`,inv:0,last:0};s.media.lvl++;s.media.inv+=M_[1];const t=lv?`You expanded ${s.media.name} with a ${M_[0].toLowerCase()}.`:`You founded ${s.media.name}, a production company.`;L(t,'g');note(t);celebrate(lv?'Media empire growing':'You’re a mogul now',t,'building','sun');render();};
+
+/* ---------- yearly tick ---------- */
+function socialTick(){const m=M();if(!m.soc){return;}const s=SOC();socSync();let inc=0;const st=s.staff;const yr={};
+  accs().forEach(([k,a])=>{
+   if(st.manager&&!a.brk&&!m.prison){const T=PLAT[k].types.filter(t=>!t[5]||t[5](a));for(let i=0;i<2;i++)socPost(k,pick(T.filter(t=>!t[7]))[0],1);}
+   if(a.ny===0||a.brk||m.prison){const loss=Math.round(a.f*rf(.05,.14));socAdd(a,-loss);}
+   if(k==='view'&&a.mon){a.pend+=Math.round(a.views*.04/1000*((VCAT.find(c=>c[0]===a.cat)||VCAT[0])[2])*.55*rf(.6,1.2));}
+   if(k==='pod'&&a.f>=5e3){a.members=Math.round(a.f*rf(.003,.008)*(a.loyal/50));a.pend+=Math.round(a.members*10*12*.9*rf(.5,1));}
+   if(k==='live'&&a.f>=50){a.subs=Math.round(a.f*rf(.005,.015)*(a.loyal/50));a.pend+=Math.round(a.subs*2.5*12);}
+   if(a.pend){inc+=a.pend;yr[k]=a.pend;a.earn+=a.pend;}a.hist.push({y:S.year,f:a.f,e:a.pend});if(a.hist.length>60)a.hist.shift();a.pend=0;a.ny=0;a.fat={};msCheck(k,a);});
+  // sponsorships
+  s.deals.forEach(d=>{const comm=st.agent?.1:0;if(d.done>=d.posts){const pay=Math.round(d.pay*(1-comm));inc+=pay;yr.spons=(yr.spons||0)+pay;
+     if(d.sketchy&&chance(.5)){const a=s.acc[d.p];if(a)socAdd(a,-Math.round(a.f*.08*(st.pr?.5:1)));s.rep=clamp(s.rep-10*(st.pr?.5:1));L(`${d.brand} was exposed as a scam. Fans blamed you for promoting it.`,'b');}}
+    else{const pay=Math.round(d.pay*d.done/d.posts*.5);inc+=pay;s.rep=clamp(s.rep-6);L(`You didn’t finish your posts for ${d.brand}. They paid ${money(pay)} and won’t work with you again.`,'b');}});
+  s.deals=[];
+  if(s.merch){const tot=socTotal();const r=Math.round(Math.min(tot*rf(.004,.01)*s.merch*(s.rep/60),[2e6,3e7,4e8][s.merch-1]));inc+=r;yr.merch=r;}
+  if(s.media){const M_=s.media;const r=Math.round(M_.inv*rf(-.05,.3)*(.5+fame()/100));M_.last=r;inc+=r;yr.media=r;}
+  const pay=SSTAFF.reduce((t,x)=>t+(st[x[0]]?x[2]:0),0);
+  if(inc>0)earnB(inc);if(pay)payB(pay);s.life+=inc;s.yr={y:S.year,inc,pay,...yr};s.hist.push({y:S.year,inc,pay,f:socTotal()});if(s.hist.length>80)s.hist.shift();
+  if(inc>=1e3)L(`Social media brought in ${money(inc)} this year${pay?` (staff cost ${money(pay)})`:''}.`,'m');
+  s.rep=clamp(s.rep+((m.s.karma-50)/25)+(st.pr?2:0)+(55-s.rep)*.08);
+  offerGen();if(s.offers.length&&s.offers.some(o=>o.y===S.year))L(`${plural(s.offers.length,'brand')} want${s.offers.length===1?'s':''} to sponsor you. Check Assets › Social media.`,'m');}
+
+/* ---------- views ---------- */
+const kvs=rows=>`<div class="kv">${rows.filter(Boolean).map(([a,b])=>`<span>${a}</span><b>${b}</b>`).join('')}</div>`;
+const socTabs=(cur,list)=>`<div class="tabs" style="margin:0 0 10px">${list.map(([k,l])=>`<button data-a="sotab" data-v="${k}" aria-pressed="${cur===k}">${l}</button>`).join('')}</div>`;
+function spark(vals,w=320,h=70,col='var(--violet)'){if(!vals||vals.length<2)return '<p class="note">Not enough history yet.</p>';const mx=Math.max(...vals),mn=Math.min(0,...vals),r=mx-mn||1;
+  const pts=vals.map((v,i)=>`${(i/(vals.length-1)*w).toFixed(1)},${(h-4-(v-mn)/r*(h-8)).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>`;}
+function socialDash(){const m=M(),s=SOC();socSync();const f=fame(),back={v:'assets'};const A=accs();
+  let h=card(`<div style="display:flex;align-items:center;gap:12px"><span class="ic c-violet">${icon('star')}</span><div style="flex:1;min-width:0"><b style="font-size:20px">${fameLabel(f)}</b><div class="note" style="margin:0">Fame ${f}/100 · ${fmtN(m.followers||0)} total audience</div></div></div>
+   <span class="li-bar" style="display:block;margin:10px 0 8px"><i style="width:${f}%;background:var(--violet)"></i></span>${kvs([['Public reputation',`${Math.round(s.rep)}/100 · ${s.rep>=75?'Beloved':s.rep>=55?'Liked':s.rep>=35?'Mixed':'Controversial'}`],['Earned this year',money(A.reduce((t,[,a])=>t+a.pend,0))+' pending'],['Last year',money(s.yr.inc||0)],['Lifetime earnings',money(s.life||0)]])}`);
+  if(m.age<13)return panel('Social media',h+card('<p class="empty">You can make accounts when you turn 13.</p>'),back);
+  h+=pgrp('Your accounts',A.map(([k,a])=>{const P=PLAT[k];return li(P.ic,P.c,`${P.n} <span class="muted" style="font-weight:600">${esc(a.handle)}</span>`,`${fmtN(a.f)} ${P.unit}${a.pend?` · ${money(a.pend)} pending`:''}${a.brk?' · on break':''}`,'splat',{p:k});}));
+  const none=PK.filter(k=>!s.acc[k]);h+=pgrp('Join a platform',none.map(k=>{const P=PLAT[k];return li(P.ic,P.c,`Join ${P.n}`,P.d,'sjoin',{p:k});}));
+  if(s.offers.length)h+=pgrp('Sponsorship offers',s.offers.map(o=>offerRow(o)));
+  if(s.deals.length)h+=pgrp('Active deals',s.deals.map(d=>li('briefcase','sun',esc(d.brand),`${PLAT[d.p].n} · ${d.done}/${d.posts} posts · ${money(d.pay)}`,'splat',{p:d.p,t:'spons'},{bar:d.done/d.posts*100})));
+  const tot=socTotal(),mc=[25e3,25e4,25e5][s.merch||0];
+  h+=pgrp('Business',[li('shirt','violet',s.merch?['Merch line','Retail merch','Apparel brand'][s.merch-1]:'Launch merch',s.merch>=3?`Earned ${money(s.yr.merch||0)} last year`:`${s.merch?'Expand':'Start'} for ${money(mc)}${tot<5e4?' · needs 50K audience':''}`,'smerch',{},{dis:s.merch>=3||tot<5e4,right:s.merch?`<b>${money(s.yr.merch||0)}</b>`:null}),
+   li('building','sun',s.media?`${esc(s.media.name)}`:'Start a production company',s.media?`${MEDIA[s.media.lvl-1][0]}${s.media.lvl<3?` · next: ${MEDIA[s.media.lvl][0]} (${money(MEDIA[s.media.lvl][1])}, ${MEDIA[s.media.lvl][2]} fame)`:''} · last year ${money(s.media.last||0)}`:`${money(MEDIA[0][1])} · needs ${MEDIA[0][2]} fame`,'smedia',{},{dis:s.media&&s.media.lvl>=3})]);
+  h+=pgrp('Team',SSTAFF.map(([k,n,sal,d])=>li('users',s.staff[k]?'mint':'blue',n,`${d}${sal?` · ${money(sal)}/yr`:''}`,'sstaff',{k},{right:s.staff[k]?'<b style="color:var(--mint)">Hired</b>':'Hire'})));
+  h+=pgrp('Creator gear',GEAR.map(([k,n,c,b,pl])=>{const own=s.gear.some(g=>g.k===k);return li('gem',own?'mint':'violet',n,`+${b} quality · ${pl.split(' ').map(x=>PLAT[x].n).join(', ')}`,'sgear',{k},{dis:own,right:own?'<b style="color:var(--mint)">Owned</b>':money(c)});}));
+  if(s.hist.length>1)h+=card(sh('Audience over time')+spark(s.hist.map(x=>x.f)));
+  return panel('Social media',h,back);}
+function offerRow(o){const P=PLAT[o.p];return `<div class="li" style="cursor:default;flex-wrap:wrap"><span class="ic sm c-sun">${icon('briefcase')}</span><span class="li-t"><b>${esc(o.brand)}${o.neg?' · improved':''}</b><small>${P.n} · ${o.posts} post${o.posts>1?'s':''} · ${money(o.pay)}${SOC().staff.agent?' (agent takes 10%)':''}</small></span>
+   <span style="display:flex;gap:6px;width:100%;justify-content:flex-end;margin-top:6px">${B('Accept','soffer',{id:o.id,op:'yes'},{cls:'btn pri'})}${o.neg?'':B('Negotiate','soffer',{id:o.id,op:'neg'},{cls:'btn'})}${B('Decline','soffer',{id:o.id,op:'no'},{cls:'btn ghost'})}</span></div>`;}
+function platPage(k){const m=M(),s=SOC(),P=PLAT[k],a=s.acc[k];const back={v:'assets',s:'social'};if(!a)return socialDash();socSync();const tab=UI.sotab||'overview';
+  let h=`<div style="display:flex;align-items:center;gap:12px;margin:2px 0 10px"><span class="ic c-${P.c}">${icon(P.ic)}</span><div style="min-width:0"><b style="font-size:18px">${esc(a.handle)}</b><div class="note" style="margin:0">${fmtN(a.f)} ${P.unit} · since ${a.on}</div></div></div>`;
+  h+=socTabs(tab,[['overview','Overview'],['create','Create'],['posts','Published'],['stats','Analytics'],['money','Money'],['spons','Sponsors'],['set','Settings']]);
+  const mine=s.posts.filter(p=>p.k===k);
+  if(tab==='overview'){const mon=k==='view'?(a.mon?'Monetized':`${fmtN(Math.min(a.f,1e3))}/1K subs · ${Math.min(a.vids,10)}/10 videos`):k==='clip'?(a.f>=1e4?'Creator rewards on':'Creator rewards at 10K'):k==='pod'?(a.f>=1e3?'Ad reads on':'Ads at 1K listeners'):k==='live'?(a.f>=50?'Subs & donations on':'Affiliate at 50 followers'):k==='chir'?(a.f>=5e4?'Revenue share on':'Revenue share at 50K'):'Earn through sponsors';
+    h+=card(kvs([[P.unit[0].toUpperCase()+P.unit.slice(1),fmtN(a.f)],['Posts',a.posts.toLocaleString()],['Total views',fmtN(a.views)],['Monetization',mon],k==='view'&&['Category',(VCAT.find(c=>c[0]===a.cat)||VCAT[0])[1]],k==='pod'&&['Members',fmtN(a.members||0)],k==='live'&&['Avg / peak viewers',`${fmtN(a.avg||0)} / ${fmtN(a.peak||0)}`],k==='live'&&['Subscribers',fmtN(a.subs||0)],['Posts this year',a.ny],['Pending earnings',money(a.pend)],['Lifetime earnings',money(a.earn)]]));
+    if(a.last)h+=card(sh('Latest post')+postRow(a.last));h+=`<div class="shopbtn">${B(icon('edit')+'Create content','sotab',{v:'create'},{cls:'btn pri big'})}</div>`;}
+  if(tab==='create'){if(a.last&&a.last.y===S.year)h+=card(sh('Latest post')+postRow(a.last));
+    h+=pgrp(`Post to ${P.n}`,P.types.map(T=>{const ok=!T[5]||T[5](a);const q=ok?postQ(k,a,T):0;const tired=(a.fat[T[0]]||0)>=2;return li(P.ic,P.c,T[1],ok?`${tired?'Your audience is tired of these · ':''}${T[7]?'Risky for your reputation · ':''}${T[3]&&SK[T[3]]?`Uses ${SK[T[3]][0].toLowerCase()}`:'Quick to make'}`:T[6],'spost',{p:k,t:T[0]},{dis:!ok||m.prison,bar:ok?q:null});}));
+    h+=`<p class="note">Quality depends on your stats, skills, gear and team. Posting the same thing too often wears your audience out; it resets each year.</p>`;}
+  if(tab==='posts')h+=mine.length?card(mine.map(postRow).join('<hr style="border:0;border-top:1px solid var(--line);margin:8px 0">')):card('<p class="empty">Nothing posted yet.</p>');
+  if(tab==='stats'){const hs=a.hist;h+=card(sh(`${P.unit[0].toUpperCase()+P.unit.slice(1)} by year`)+spark(hs.map(x=>x.f).concat(a.f)));h+=card(sh('Earnings by year')+spark(hs.map(x=>x.e),320,70,'var(--mint)'));
+    const best=mine.slice().sort((x,y)=>y.views-x.views)[0];h+=card(kvs([['Average quality',mine.length?Math.round(mine.reduce((t,p)=>t+p.q,0)/mine.length):'—'],['Best post',best?`${best.t} · ${fmtN(best.views)} views`:'—'],['Viral posts',mine.filter(p=>p.vir).length],['Gear bonus',`+${gearB(k)}`],['Team bonus',`+${staffB(k)}`]]));}
+  if(tab==='money'){const e=s.yr.y===S.year-1?s.yr[k]||0:0;h+=card(kvs([['Pending (paid at year end)',money(a.pend)],['Last year',money(e)],['Lifetime',money(a.earn)],k==='view'&&['Ad RPM',`$${(VCAT.find(c=>c[0]===a.cat)||VCAT[0])[2]} · you keep 55%`],k==='pod'&&['Memberships','$5 / $10 / $20 tiers · 10% fee'],k==='live'&&['Subs','$2.50/mo each to you']]))+`<p class="note">Sponsorships, merch and your media company pay out on the Social media page.</p>`;}
+  if(tab==='spons'){const of=s.offers.filter(o=>o.p===k),dl=s.deals.filter(d=>d.p===k);h+=pgrp('Offers',of.map(offerRow))+pgrp('Active deals',dl.map(d=>li('briefcase','sun',esc(d.brand),`${d.done}/${d.posts} posts done · ${money(d.pay)} at year end`,'sotab',{v:'create'},{bar:d.done/d.posts*100})));
+    if(!of.length&&!dl.length)h+=card(`<p class="empty">No sponsors yet. Brands reach out once you have ${k==='snap'?'5K':'10K'} ${P.unit}.</p>`);}
+  if(tab==='set'){h+=card(`<div class="form">${k==='view'?`<label class="field full">Channel category<select id="soc-view-cat">${VCAT.map(c=>`<option value="${c[0]}" ${a.cat===c[0]?'selected':''}>${c[1]} · $${c[2]} RPM</option>`).join('')}</select></label>`:''}
+     ${k==='pod'?`<label class="field full">Podcast topic<select id="soc-pod-topic">${PTOP.map(c=>`<option value="${c[0]}" ${a.topic===c[0]?'selected':''}>${c[1]}</option>`).join('')}</select></label>`:''}
+     <label class="field full">Niche (+6 quality on this type)<select id="soc-${k}-niche"><option value="">None</option>${P.types.map(T=>`<option value="${T[0]}" ${a.niche===T[0]?'selected':''}>${T[1]}</option>`).join('')}</select></label></div>`);
+    h+=pgrp('',[li('moon','blue',a.brk?'End your break':'Take a break','Lower stress, but your audience shrinks','sbreak',{p:k}),li('x','coral','Delete account','You lose this audience','sdel',{p:k})]);}
+  return panel(P.n,h,back);}
+const postRow=p=>`<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div style="min-width:0"><b>${esc(p.t)}${p.vir?' 🔥':''}</b><div class="note" style="margin:0">${p.y} · quality ${p.q}${p.deal?` · sponsored by ${esc(p.deal)}`:''}</div></div><div style="text-align:right;flex:none"><b>${fmtN(p.views)}</b><div class="note" style="margin:0">${p.gain>=0?'+':'−'}${fmtN(Math.abs(p.gain))}${p.earn?` · ${money(p.earn)}`:''}</div></div></div>`;
+
+/* ---------- empire dashboard ---------- */
+function empireDash(){const m=M(),back={v:'assets'};const nw=netWorth(),last=(S.mhist||[])[S.mhist.length-1];
+  const inc=last?last.rows.reduce((t,r)=>t+r[1],0):0,exp=last?last.rows.reduce((t,r)=>t+r[2],0):0;
+  const H_=homes(),cars=S.assets.filter(isCar),boats=S.assets.filter(isBoat),air=S.assets.filter(isAir),col=S.assets.filter(isCol),R=S.re;
+  let h=card(`<div class="eyebrow">Net worth</div><div style="font-size:30px;font-weight:800;margin:2px 0 6px">${money(nw)}</div>${kvs([['Cash',money(m.cash)],['Debt',money(m.debt)],['Income last year',money(inc)],['Expenses last year',money(exp)],['Net last year',money(inc-exp)]])}`);
+  if((S.mhist||[]).length>1)h+=card(sh('Net worth over the years')+spark(S.mhist.map(x=>x.nw),320,80,'var(--mint)')+`<div class="note" style="display:flex;justify-content:space-between;margin:4px 0 0"><span>${S.mhist[0].y}</span><span>${last.y}</span></div>`);
+  h+=pgrp('What you own',[li('home','mint','Homes',`${H_.length} · ${money(H_.reduce((t,a)=>t+a.value,0))}`,'asub',{v:'realestate'}),li('car','teal','Cars & motorcycles',`${cars.length} · ${money(cars.reduce((t,a)=>t+a.value,0))}`,'asub',{v:'vehicles'}),
+   li('anchor','blue','Boats & aircraft',`${boats.length+air.length} · ${money([...boats,...air].reduce((t,a)=>t+a.value,0))}`,'asub',{v:'fleet'}),li('gem','violet','Collections',`${col.length} · ${money(col.reduce((t,a)=>t+a.value,0))}`,'asub',{v:'collection'}),
+   li('briefcase','sun','Businesses',`${S.biz.length} · ${money(bizVal())}`,'go',{v:'business'}),li('building','violet','Real estate company',R&&R.props?`${R.props.length} properties · ${money(reEquity())} equity`:'Not started','go',{v:'business',s:'empire'}),
+   li('star','coral','Social media',`${fmtN(m.followers||0)} audience · ${fameLabel()}`,'asub',{v:'social'})]);
+  const big=S.assets.filter(a=>a.paid||a.price||a.value).map(a=>[a.name,a.paid||a.price||a.value]).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if(big.length)h+=card(sh('Biggest purchases')+kvs(big.map(([n,v])=>[esc(n),money(v)])));
+  const inv=[...(R&&R.props?R.props.map(p=>[p.name,p.noi||0]):[]),...S.biz.map(b=>[b.name,b.last||0])].filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if(inv.length)h+=card(sh('Most profitable investments')+kvs(inv.map(([n,v])=>[esc(n),money(v)+'/yr'])));
+  const aw=((m.sport&&m.sport.awards)||[]).filter(a=>a.w>=2);const tro=[...aw.map(a=>`${a.y} · ${esc(a.t)}`),...(m.achs||[]).slice(-6).map(a=>esc((ACH.find(x=>x[0]===a)||[0,String(a)])[1]))];
+  h+=card(sh('Trophies & achievements')+(tro.length?`<div class="chips">${tro.slice(0,16).map(t=>`<span class="chip c-sun">${t}</span>`).join('')}</div>`:'<p class="empty">Nothing yet. Go win something.</p>'));
+  return panel('Empire dashboard',h,back);}
+
+/* ---------- wire into Assets ---------- */
+const _vA8=vAssets;vAssets=function(){const s=UI.sub;if(s==='social')return socialDash();if(s==='splat')return platPage(UI.splat);if(s==='dash')return empireDash();
+  let h=_vA8();if(s||!M().alive)return h;const m=M();const so=m.soc;
+  const rows=[li('star','violet','Social media',so&&accs().length?`${fmtN(m.followers||0)} audience · ${fameLabel()}`:(m.age>=13?'Start posting, grow a following':'Available at 13'),'asub',{v:'social'}),li('chart','mint','Empire dashboard',`Net worth ${money(netWorth())}`,'asub',{v:'dash'})];
+  if(so&&so.gear.length)rows.push(li('gem','violet','Creator gear',`${plural(so.gear.length,'item')} · ${money(so.gear.reduce((t,g)=>t+g.paid*.5,0))}`,'asub',{v:'social'}));
+  const g=pgrp('Misc',rows);const i=h.lastIndexOf('<div class="shopbtn">');return i>=0?h.slice(0,i)+g+h.slice(i):h.replace(/<\/div><\/section>$/,g+'</div></section>');};
+const _r8=route;route=function(v,s){if(v==='assets'&&['social','dash'].includes(s)){UI.view='assets';UI.sub=s;UI.splat=null;return;}return _r8(v,s);};
+
+/* ---------- events ---------- */
+const hasSoc=()=>M().soc&&accs().length>0&&!M().prison;
+ev('soc_viral',{special:1,title:'You went viral',text:c=>`Your ${PLAT[c.k].n} post hit ${fmtN(c.v)} views. Everyone is talking about it.`,
+ choices:[{l:'Post follow-ups right away',fx:c=>{const a=SOC().acc[c.k];if(a)socAdd(a,Math.round(c.v*rf(.005,.02)));sAdd('stress',4);return ['You rode the wave and kept a lot of the new fans.','g'];}},
+  {l:'Do interviews about it',fx:()=>{M().renown=(M().renown||0)+1;sAdd('confidence',3);return ['A morning show had you on.','g'];}},{l:'Stay humble',fx:()=>{sAdd('happy',3);return ['You enjoyed it quietly.','n'];}}]});
+ev('soc_hotbacklash',{special:1,title:'Your hot take backfired',text:()=>'A hot take of yours on Chirper is getting ratioed and quoted by thousands of angry people.',
+ choices:[{l:'Apologize',fx:()=>{const s=SOC();s.rep=clamp(s.rep+4);sAdd('karma',2);return ['Most people moved on.','n'];}},{l:'Double down',fx:()=>{const s=SOC();s.rep=clamp(s.rep-8);const a=s.acc.chir;if(a)socAdd(a,Math.round(a.f*rf(-.1,.3)));return ['It got even louder. Some loved it.','m'];}},{l:'Delete it and log off',fx:()=>{sAdd('stress',-3);return ['It blew over in a few days.','n'];}}]});
+ev('soc_hack',{min:13,w:.6,when:()=>hasSoc()&&socTotal()>=5e3,title:'Account hacked',text:()=>'Someone got into one of your accounts and is posting crypto scams.',
+ choices:[{l:'Pay a security firm ($5K)',hide:()=>M().cash<5e3,fx:()=>{M().cash-=5e3;return ['They locked it down within hours.','g'];}},{l:'Fight support tickets yourself',fx:()=>{const [k,a]=pick(accs());socAdd(a,-Math.round(a.f*rf(.05,.2)));SOC().rep=clamp(SOC().rep-4);return [`It took weeks. You lost followers on ${PLAT[k].n}.`,'b'];}}]});
+ev('soc_beef',{min:14,w:.7,when:()=>hasSoc()&&socTotal()>=2e4,title:'Creator beef',ctx:()=>({n:pick(['@TrashPandaTV','@JadeJumps','@BigMoeVlogs','@KaylaKicks','@NoCapNate','@DrHotTakes'])}),text:c=>`${c.n} made a video roasting you. Their fans are in your comments.`,
+ choices:[{l:'Make a response video',fx:()=>{const [k,a]=pick(accs());if(chance(.55+M().s.charisma/300)){socAdd(a,Math.round(a.f*rf(.05,.2)+2e3));return ['Your response was funnier. You won the internet that week.','g'];}SOC().rep=clamp(SOC().rep-5);return ['It made you look petty.','b'];}},
+  {l:'Invite them to collab',fx:()=>{const [k,a]=pick(accs());socAdd(a,Math.round(a.f*rf(.03,.12)));return ['You made up on camera. Both audiences loved it.','g'];}},{l:'Ignore it',fx:()=>['It died down.','n']}]});
+ev('soc_burnout',{min:15,w:.7,when:()=>hasSoc()&&accs().some(([,a])=>a.posts>=30),title:'Creator burnout',text:()=>'You’re exhausted from constantly making content. Even opening the app feels heavy.',
+ choices:[{l:'Take a few months off',fx:()=>{accs().forEach(([,a])=>socAdd(a,-Math.round(a.f*rf(.02,.06))));sAdd('stress',-15);sAdd('happy',6);return ['You came back refreshed.','g'];}},{l:'Push through',fx:()=>{sAdd('stress',12);sAdd('health',-3);return ['You kept posting. It showed.','b'];}},{l:'Hire help',hide:()=>SOC().staff.manager,fx:()=>{SOC().staff.manager=1;sAdd('stress',-6);return ['You hired a social media manager.','g'];}}]});
+ev('soc_fakegive',{min:14,w:.5,when:()=>hasSoc()&&socTotal()>=1e5,title:'Fake giveaway',text:()=>'Scammers made accounts pretending to be you and are running a fake giveaway.',
+ choices:[{l:'Warn your followers',fx:()=>{SOC().rep=clamp(SOC().rep+2);return ['Fans appreciated the heads up.','g'];}},{l:'Do a real giveaway ($10K)',hide:()=>M().cash<1e4,fx:()=>{M().cash-=1e4;const [,a]=pick(accs());socAdd(a,Math.round(a.f*.05+1e3));SOC().rep=clamp(SOC().rep+5);return ['The real one went viral.','g'];}}]});
+ev('soc_awards',{min:15,w:.6,when:()=>hasSoc()&&socTotal()>=1e6,title:'Creator Awards nomination',ctx:()=>({cat:pick(['Creator of the Year','Breakout Creator','Best Comedy Creator','Best Podcast','Streamer of the Year','Best Lifestyle Creator'])}),text:c=>`You’re nominated for ${c.cat} at the Creator Awards.`,
+ choices:[{l:'Attend the show',fx:c=>{if(chance(.3+fame()/300+luckB())){M().renown=(M().renown||0)+2;const [,a]=pick(accs());socAdd(a,Math.round(a.f*.05));celebrate('You won!',`${c.cat} at the Creator Awards.`,'trophy','sun');M().flags.creatorAward=1;return [`You won ${c.cat}!`,'g'];}return ['You lost, but the afterparty was great.','n'];}},{l:'Skip it',fx:()=>['You watched online.','n']}]});
+ev('soc_cancel',{min:16,w:.5,when:()=>hasSoc()&&socTotal()>=5e4&&SOC().rep<45,title:'You’re being canceled',text:()=>'A thread listing everything wrong with you is going around. Brands are getting nervous.',
+ choices:[{l:'Post a sincere apology video',fx:()=>{const s=SOC();s.rep=clamp(s.rep+8);s.offers=[];accs().forEach(([,a])=>socAdd(a,-Math.round(a.f*.05*(s.staff.pr?.5:1))));return ['It helped. Some fans came back.','n'];}},
+  {l:'Let your publicist handle it',hide:()=>!SOC().staff.pr,fx:()=>{SOC().rep=clamp(SOC().rep+10);return ['Your publicist turned the story around.','g'];}},{l:'Go quiet for a while',fx:()=>{const s=SOC();s.deals.forEach(d=>d.done=0);accs().forEach(([,a])=>socAdd(a,-Math.round(a.f*.12)));return ['You lost followers and your sponsors paused deals.','b'];}}]});
+ev('soc_doc',{min:18,w:.4,when:()=>fame()>=60,title:'Documentary offer',text:()=>'A streaming service wants to make a documentary about your life.',
+ choices:[{l:'Do it',fx:()=>{const m=M();const p=Math.round(rf(1e5,2e6)*(fame()/60));m.cash+=p;m.followers+=Math.round(m.followers*.06);m.renown=(m.renown||0)+2;return [`It premiered to big numbers. You were paid ${money(p)}.`,'g'];}},{l:'Keep your life private',fx:()=>{sAdd('happy',2);return ['You passed.','n'];}}]});
+
 
 document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el||el.disabled)return;const f=H[el.dataset.a];if(!f)return;
   if(/^(buyhome|buycar|buyboat|buyair|colbuy|rbuy|pjgo|bhgo|saleacc|cogo|rival|ripo)$/.test(el.dataset.a)){const k=el.dataset.a+JSON.stringify(el.dataset);const now=Date.now();if(LASTBUY.k===k&&now-LASTBUY.t<700)return;LASTBUY={k,t:now};}
@@ -4602,7 +4831,8 @@ document.addEventListener('input',e=>{const el=e.target;
     if(el.dataset.cr.startsWith('st.')){const b=el.parentElement.querySelector('b.num');if(b)b.textContent=v;}
     if(el.dataset.cr.startsWith('pers.')){const labs=el.parentElement.querySelectorAll('.lab');if(labs.length===2){labs[0].classList.toggle('on',v<=30);labs[1].classList.toggle('on',v>=70);}}
     crPrev();}});
-document.addEventListener('change',e=>{const el=e.target;if(el.id==='movecountry'){UI.mc=el.value;UI.mn=30;render();return;}if(!(el.dataset&&el.dataset.cr&&CR&&el.tagName==='SELECT'))return;
+document.addEventListener('change',e=>{const el=e.target;if(el.id==='movecountry'){UI.mc=el.value;UI.mn=30;render();return;}
+  if(el.id==='hcity'){UI.hci=+el.value;render();return;}if(el.id==='bhcity'&&UI.bh){bhKeepName();UI.bh.ci=+el.value;if(!isWater(CITIES[UI.bh.ci]))UI.bh.x.dock=0;openBuild();return;}if(el.id==='pjcity'&&UI.pj){pjKeep();UI.pj.ci=+el.value;UI.pj.zone='';UI.pj.dev='';render();return;}if(el.id==='bcicity'){UI.bci=+el.value;render();return;}if(el.id&&el.id.startsWith('soc-')){socSel(el);return;}if(!(el.dataset&&el.dataset.cr&&CR&&el.tagName==='SELECT'))return;
   let v=el.value;const cur=getPath(CR,el.dataset.cr);if(typeof cur==='number')v=+v;setPath(CR,el.dataset.cr,v);
   if(el.dataset.cr==='city'){CR.langs=[...(CLANG[CITIES[v].c]||['English'])];if(CR.cit2===CITIES[v].c)CR.cit2='';}
   if(el.dataset.cr==='g'){CR.pron=v==='m'?'he/him':v==='f'?'she/her':'they/them';}
