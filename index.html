@@ -414,6 +414,23 @@ h1,h2,h3,h4{font-weight:600;letter-spacing:.005em}
 .story{padding:4px 18px}.sy{padding:16px 0}.sy h4{font:600 21px/1.1 var(--display);margin-bottom:9px}.sy h4 small{font-size:12px}
 .sy p{font-size:16px;line-height:1.5;padding:3px 0 3px 12px}.sy p+p{margin-top:6px}
 .sy.now{background:var(--blue-soft);margin:6px -10px;padding:16px 12px;border-radius:16px;border-bottom:0}
+
+.panel{display:flex;flex-direction:column;gap:12px;margin:-14px -16px 0}
+.ph{position:sticky;top:var(--toph,118px);z-index:6;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;background:var(--navy2);color:#fff;padding:9px 8px}
+.ph h2{text-align:center;font:600 19px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:#fff}
+.px{width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:none;color:#fff;display:grid;place-items:center;cursor:pointer}.px svg{width:18px;height:18px}
+.pb{display:flex;flex-direction:column;gap:12px;padding:0 16px}
+.pnote{color:var(--muted);font-weight:700;font-size:14px}
+.pg{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.pgh{background:var(--card2);color:var(--muted);font:800 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;text-align:center;padding:8px;border-bottom:1px solid var(--line)}
+.li{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:11px 14px;cursor:pointer;color:inherit;font:inherit}
+.li:last-child{border-bottom:0}.li:active{background:var(--blue-soft)}.li:disabled{opacity:.45;cursor:not-allowed}
+.li-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.li-t b{font:600 16px/1.2 var(--display);color:var(--blue)}.li-t b .rel{font:700 12px var(--body);color:var(--muted)}.li-t small{font-size:12.5px;color:var(--muted);font-weight:700}
+.li-bar{display:block;height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:4px;max-width:180px}.li-bar i{display:block;height:100%;border-radius:3px}
+.li .chev{width:18px;height:18px;color:var(--muted);flex:none}.li-r{font-weight:800;font-size:13px;color:var(--blue);flex:none}
+.li-av{width:42px;height:42px;border-radius:50%;overflow:hidden;flex:none;background:var(--av)}.li-av svg{width:100%;height:100%;display:block}.li-av.dim{opacity:.5;filter:grayscale(1)}
+.shopbtn{display:flex;justify-content:center}.shopbtn .btn{width:100%;justify-content:center}
+.panel .card{margin:0}
 </style>
 
 <div id="app" hidden>
@@ -1559,7 +1576,7 @@ function jobTick(){const m=M(),j=m.job;if(!j||m.prison)return;const d=JOBS[j.id]
     else if(j.id==='model'&&m.age>=35&&chance(.3)){m.job=null;L('You stepped away from modeling.','a');}return;}
   if(j.id==='crew'){sAdd('karma',-4);sAdd('street',ri(1,3));if(chance(.1+j.level*.03-(m.s.street-50)/600-(hasT('criminal')?.03:0))){S.queue.push({id:'court',ctx:{crime:'racketeering',y:4+j.level*3}});return;}}
   if(j.perf>=72&&j.yil>=2&&j.level<last){const need=promoNeed(d,j.level+1);
-    if(!d.key||skv(d.key)>=need){if(chance(.55+(hasT('leadership')?.15:0)+(PV('ambitious')-50)/400)){j.level++;j.yil=0;j.perf=55;sAdd('happy',8);sAdd('confidence',3);pAdd('ambitious',1);L(`You were promoted to ${d.titles[j.level]}.`,'g');
+    if(!d.key||skv(d.key)>=need){if(chance(.55+(hasT('leadership')?.15:0)+(PV('ambitious')-50)/400)){j.level++;j.yil=0;j.perf=55;sAdd('happy',8);sAdd('confidence',3);pAdd('ambitious',1);L(`You were promoted to ${d.titles[j.level]}.`,'g');if(j.level<last)celebrate('Promoted!',`You’re now ${d.titles[j.level]}.`,'trending','mint');
       if(j.level===last)celebrate(`${d.titles[j.level]}!`,'You reached the top of your field.','trending','violet');}}
     else if(chance(.6))L(`You were passed over for ${d.titles[j.level+1]}. Your boss wants your ${SK[d.key][0].toLowerCase()} at ${need}+ (it's ${skv(d.key)}).`,'n');}
   else if(j.perf<25&&j.level>0&&chance(.25)){j.level--;j.yil=0;j.perf=45;sAdd('happy',-6);L(`You were demoted to ${d.titles[j.level]}.`,'b');}
@@ -2049,10 +2066,10 @@ H.pact=d=>{const p=P(d.id),m=M();if(!p)return;let t='',tone='g';
    case 'baby':{if(!spend(1))return;const fem=[m,p].find(x=>x.g==='f');if(!fem){t='You’ll need to adopt or find a surrogate to have a child together.';tone='n';break;}
      const fa=fem.age;const c=(fa<35?.5:fa<40?.3:fa<45?.12:.02)+luckB()/2;if(chance(c)){const g=pick(['m','f']);const st={};ATTRK.forEach(k=>st[k]=Math.round(clamp((m.s[k]+((p.st&&p.st[k])??50))/2+ri(-15,15))));st.health=ri(80,100);
        const k=person('child',0,{g,last:m.last,bond:ri(75,95),st,ap:randAp(g,[m.ap,p.ap])});S.people.push(k);m.c.kids++;sAdd('happy',12);t=`You had a baby ${g==='m'?'boy':'girl'} and named ${g==='m'?'him':'her'} ${k.first}.`;celebrate('Welcome to the world!',`${k.first} ${k.last} was born.`,'heart','coral');}else{t='No baby this year.';tone='n';}break;}
-   case 'propose':{const r=ringCost();m.cash-=r;if(chance(p.bond/100+(r>5e3?.08:0)+(m.s.confidence-50)/400)){p.rel='fiance';sAdd('happy',10);t=`${p.first} said yes! You're engaged.`;}else{p.bond=clamp(p.bond-15);t=`${p.first} said they weren't ready.`;tone='b';}break;}
+   case 'propose':{const r=ringCost();m.cash-=r;if(chance(p.bond/100+(r>5e3?.08:0)+(m.s.confidence-50)/400)){p.rel='fiance';sAdd('happy',10);t=`${p.first} said yes! You're engaged.`;celebrate('You’re engaged!',`${p.first} said yes.`,'heart','coral');}else{p.bond=clamp(p.bond-15);t=`${p.first} said they weren't ready.`;tone='b';}break;}
    case 'prenup':if(chance(.6)){p.prenup=1;t=`${p.first} agreed to sign a prenup.`;}else{p.bond=clamp(p.bond-12);t=`${p.first} was offended you asked.`;tone='b';}break;
    case 'wed0':case 'wed1':case 'wed2':{const i=+d.k[3];const c=[500,35e3,25e4][i];if(m.cash<c){toast(`You need ${money(c)} for that wedding.`);return;}m.cash-=c;p.rel='spouse';m.flags.married=1;p.bond=clamp(p.bond+[5,12,18][i]);sAdd('happy',[8,14,18][i]);
-     t=[`You married ${p.first} at the courthouse.`,`You married ${p.first} in front of 150 guests.`,`You married ${p.first} on a cliff overlooking the sea.`][i];if(i===2)m.followers+=ri(500,5e3);break;}
+     t=[`You married ${p.first} at the courthouse.`,`You married ${p.first} in front of 150 guests.`,`You married ${p.first} on a cliff overlooking the sea.`][i];if(i===2)m.followers+=ri(500,5e3);celebrate('Just married!',`You and ${p.first} tied the knot.`,'heart','coral');break;}
    case 'breakup':p.rel='ex';p.bond=10;sAdd('happy',-6);pAdd('loyal',-1);t=`You and ${p.first} broke up.`;tone='b';break;
    case 'divorce':{const r=divorce(p);t=r[0];tone=r[1];break;}
    case 'give':if(m.cash<1e4){toast('You need $10K.');return;}m.cash-=1e4;p.cash+=1e4;p.bond=clamp(p.bond+10);pAdd('generous',2);t=`You gave ${p.first} $10,000.`;break;
@@ -2297,7 +2314,7 @@ function teamSeason(kind){const m=M(),sp=m.sport,D=SPORTS[sp.sp],r=sp.r;const g=
   if(kind==='hs')starter=r>=36+(m.age-14)*4;else{sp.cy=(sp.cy||0)+1;starter=r>=(38+sp.college.p*.32)||(sp.cy===1&&chance((sp.college.pt||20)/100));}
   const base=kind==='hs'?sp.tstr:sp.college.p*.8+ri(-6,6);const str=base+(starter?(r-55)/4:0);const [w,l]=recW(str,g);const perf=r+rf(-8,8)-(starter?0:15);
   let t=`${kind==='hs'?sp.team:sp.college.name}: ${w}-${l}. You were ${starter?'a starter':'a backup'} (${statLine(sp.pos,perf,starter,g)}).`;
-  const aw=(n,wt)=>{sp.awards.push({y:S.year,t:n,w:wt,st:sp.stage});t+=` ${n}!`;};
+  const aw=(n,wt)=>{sp.awards.push({y:S.year,t:n,w:wt,st:sp.stage});ALERT_AW(sp,n,wt);t+=` ${n}!`;};
   if(kind==='college')spSkills().forEach(k=>skGain(k,1.5*((sp.college.dev||60)/70)));
   if(kind==='hs'){if(perf>=82&&starter)aw('All-State',1);else if(perf>=70&&starter)aw('All-County',.5);if(m.age>=17&&perf>=72&&starter)aw('Team captain',.5);
     if(w/g>=.8&&chance(.25+(str-60)/120))aw('State champions',2);
@@ -2313,7 +2330,7 @@ function proTeamSeason(){const m=M(),sp=m.sport,D=SPORTS[sp.sp],r=sp.r;const g=D
   const thr=54+(sp.tstr-60)*.25+(sp.tier===2?6:sp.tier===0?-8:0);const starter=r>=thr;const str=sp.tstr+(starter?(r-60)/3:0);const [w,l]=recW(str,g);const perf=r+rf(-7,7)-(starter?0:14);
   const sal=sp.contract?sp.contract.sal:D.minPay;earnB(sal-tax(sal));sp.proYears=(sp.proYears||0)+1;
   m.followers+=Math.round((starter?1:.3)*Math.pow(Math.max(0,r-40),2.2)*20);
-  let t=`${sp.team}: ${w}-${l}. ${starter?'Starter':'Bench'} (${statLine(sp.pos,perf,starter,g)}).`;const aw=(n,wt)=>{sp.awards.push({y:S.year,t:n,w:wt,st:sp.stage});t+=` ${n}!`;};
+  let t=`${sp.team}: ${w}-${l}. ${starter?'Starter':'Bench'} (${statLine(sp.pos,perf,starter,g)}).`;const aw=(n,wt)=>{sp.awards.push({y:S.year,t:n,w:wt,st:sp.stage});ALERT_AW(sp,n,wt);t+=` ${n}!`;};
   if(perf>=82&&starter)aw(D.allstar,2);if(perf>=90&&starter)aw(D.top,5);if(perf>=96&&starter&&chance(.5))aw('League MVP',8);
   if(w/g>=.6){t+=' Made the playoffs.';if(chance(.08+(str-60)/110)){aw(`${D.champ} champions`,6);sp.titles++;m.flags.proChamp=1;celebrate(`${cap(D.champ)} champions!`,`The ${sp.team} won it all.`,'trophy','sun');}}
   if(r>=76&&(D.cup||!usPath())){sp.caps=(sp.caps||0)+ri(3,9);t+=` Called up to the ${m.nat} national team.`;
@@ -2363,7 +2380,7 @@ function sportTick(){const m=M(),sp=m.sport;if(!sp||m.prison)return;const D=SPOR
    case 'youth':case 'junior':{line=`${sp.stage==='youth'?'Youth':'Junior'} ${D.n.toLowerCase()} season: ${r>=45?'you were one of the best kids around.':r>=30?'you held your own and kept improving.':'you had fun and learned a lot.'}`;
      if(D.type==='race')line=`Karting season: ${r>=45?'you won a regional series.':'you finished mid-pack and learned a lot.'}`;
      else if(D.type!=='team'&&m.age>=10)line+=` Junior ranking: #${clamp(Math.round(800*Math.pow(.9,r-20)),1,999)}.`;break;}
-   case 'hs':{if(!sp.onTeam){if(chance(clamp((r-26)/25+.25,.05,.97))){sp.onTeam=1;sp.team=`${city().n} High`;sp.tstr=ri(38,72);line=`You made the ${sp.team} varsity ${D.n.toLowerCase()} team as a ${sp.pos.toLowerCase()}.`;}else{line=`You got cut at varsity ${D.n.toLowerCase()} tryouts. Keep practicing.`;break;}}
+   case 'hs':{if(!sp.onTeam){if(chance(clamp((r-26)/25+.25,.05,.97))){sp.onTeam=1;sp.team=`${city().n} High`;sp.tstr=ri(38,72);celebrate('You made varsity!',`${sp.team} ${D.n.toLowerCase()} · ${sp.pos||''}`,'trophy','mint');line=`You made the ${sp.team} varsity ${D.n.toLowerCase()} team as a ${sp.pos.toLowerCase()}.`;}else{line=`You got cut at varsity ${D.n.toLowerCase()} tryouts. Keep practicing.`;break;}}
      line+=' '+teamSeason('hs');break;}
    case 'college':{if(sp.onTeam&&!sp.college)sp.onTeam=0;if(!sp.onTeam){const nm=(m.school&&m.school.tierName)||'your college';if(chance(clamp((r-42)/22,.03,.9))){sp.onTeam=1;sp.college={name:nm,p:{state:45,private:60,elite:78}[m.school.tier]||50,dev:60,pt:20};sp.cy=0;line=`You walked on to the ${nm} ${D.n.toLowerCase()} team.`;}else{line=`You tried to walk on at ${nm} but didn't make the roster.`;break;}}
      line+=' '+teamSeason('college');if(sp.finalYear&&!sp.drafted){queueDraft();}break;}
@@ -2389,7 +2406,7 @@ ev('recruit',{special:1,title:'Recruiting',custom:recruitHTML,text:()=>'',choice
 H.rvisit=d=>{const o=S.queue[0].ctx.offers[+d.i];o.visited=1;o.fit=chance(.6)?1:-1;if(o.fit>0){o.pt=Math.min(95,o.pt+6);o.dev=Math.min(98,o.dev+3);}showEvent();};
 H.rcommit=d=>{const c=S.queue[0].ctx,o=c.offers[+d.i],m=M(),sp=m.sport;
   if(c.transfer){sp.college={...o};if(m.school)m.school.tierName=o.name;sp.onTeam=1;finishCustom(`You transferred to ${o.name}. Coach ${o.coach} welcomed you to campus.`,'g');return;}
-  sp.commit=o;sp.offers=null;finishCustom(`You committed to ${o.name}! Coach ${o.coach}: "Welcome to the family, ${dispName(m)}. We can't wait to get you on the field."`,'g');};
+  sp.commit=o;sp.offers=null;celebrate('Committed!',`You’re going to ${o.name}${o.schol==='Full scholarship'?' on a full scholarship':''}.`,'cap','blue');finishCustom(`You committed to ${o.name}! Coach ${o.coach}: "Welcome to the family, ${dispName(m)}. We can't wait to get you on the field."`,'g');};
 H.rlater=()=>{const sp=M().sport;sp.offers=S.queue[0].ctx.offers;S.queue.shift();closeModal();render();};
 function draftHTML(c){const m=M(),sp=m.sport,D=SPORTS[sp.sp];
   if(!c.round)return `<p class="eyebrow">${D.leagueN} Draft</p><h2>Undrafted</h2><p class="lead">Your name was never called. You can still sign as an undrafted free agent and fight for a roster spot.</p><div class="choices"><button class="choice" data-a="dudfa">Sign as an undrafted free agent<small>Make-the-team odds depend on your rating (${sp.r})</small></button><button class="choice alt" data-a="dquit">Move on from ${D.n.toLowerCase()}</button></div>`;
@@ -3995,7 +4012,7 @@ function renderDock(){const m=M();const life=UI.view==='life'&&!UI.sub&&!UI.page
   const q=S.queue.length;
   $('#nav').className='abar n'+(L_.length+R_.length);
   $('#nav').innerHTML=`<div class="ab-side">${L_.map(btn).join('')}</div><button class="agebtn" id="ageup" data-a="ageup" aria-label="${m.alive?'Age up one year':'See your life summary'}">${m.alive?`<span class="plus">+</span><span>Age</span>`:`<span class="plus">✦</span><span>Summary</span>`}${q?`<span class="badge">${q}</span>`:''}</button><div class="ab-side">${R_.map(btn).join('')}</div>`;
-  requestAnimationFrame(()=>{const d=$('.dock');if(d)document.documentElement.style.setProperty('--dockh',d.offsetHeight+'px');});}
+  requestAnimationFrame(()=>{const d=$('.dock');if(d)document.documentElement.style.setProperty('--dockh',d.offsetHeight+'px');const t=$('.top');if(t)document.documentElement.style.setProperty('--toph',t.offsetHeight+'px');});}
 /* ---------- Life ---------- */
 function vLife(){if(UI.sub==='profile')return vProfile();if(UI.sub==='move')return vMove();const m=M();let h='';
   const n=UI.full?S.log.length:80;const ys=S.log.slice(-n);
@@ -4449,6 +4466,122 @@ function homeArt(h,o={}){const id=++ARTN,rnd=sr(h.seed||h.id||h.name),night=!!o.
   if(F.dock&&!['lake','island'].includes(st)&&set!=='city')s+=PL([[0,G+30],[64,G+28],[66,G+33],[0,G+35]],'#9C7A52');
   s+=decay(h.cond??80);
   return `<svg viewBox="0 0 320 200" class="art" role="img" aria-label="${esc(h.name||'Home')}">${s}</svg>`;}
+
+/* =========================================================
+   v7 · list-style panels (tap a row to drill in) + more alerts
+   ========================================================= */
+const PANEL_T={career:'Occupation',school:'School',people:'Relationships',activities:'Activities',assets:'Assets',money:'Money',business:'Business',more:'Menu'};
+function panel(title,body,back){return `<section class="panel"><div class="ph">${back?`<button class="px" data-a="go" data-v="${back.v}" ${back.s?`data-s="${back.s}"`:''} aria-label="Back">${icon('left')}</button>`:`<button class="px" data-a="go" data-v="life" aria-label="Close">${icon('x')}</button>`}<h2>${esc(title)}</h2><span class="px-sp"></span></div><div class="pb">${body}</div></section>`;}
+const pgrp=(label,rows)=>rows&&rows.length?`<div class="pg">${label?`<div class="pgh">${esc(label)}</div>`:''}${Array.isArray(rows)?rows.join(''):rows}</div>`:'';
+function li(ic,c,t,sub,a,data={},o={}){const lead=o.lead||`<span class="ic sm c-${c}">${icon(ic)}</span>`;
+  return `<button class="li ${o.cls||''}" data-a="${a}" ${Object.entries(data).map(([k,v])=>`data-${k}="${esc(v)}"`).join(' ')} ${o.dis?'disabled':''}>${lead}<span class="li-t"><b>${t}</b>${sub?`<small>${sub}</small>`:''}${o.bar!=null?`<span class="li-bar"><i style="width:${clamp(o.bar)}%;background:${o.barc||(o.bar<30?'var(--coral)':o.bar<60?'var(--sun)':'var(--mint)')}"></i></span>`:''}</span>${o.right!=null?`<span class="li-r">${o.right}</span>`:icon('right','chev')}</button>`;}
+function panelize(html,title,back){html=html.replace(/^\s*<button class="back"[^>]*>.*?<\/button>/,'');let t=title,extra='';const m_=html.match(/^<div class="pagehead"><h1>(.*?)<\/h1>(.*?)<\/div>/);if(m_){t=t||m_[1].replace(/<[^>]+>/g,'');extra=m_[2];html=html.slice(m_[0].length);}return panel(t||'',(extra?`<div class="pnote">${extra}</div>`:'')+html,back);}
+const subBack=()=>({v:UI.view});
+/* routing tweaks: sections use UI.sub for drill-downs */
+const _route=route;
+route=function(v,s){if(v==='actions'&&s&&s.startsWith('career:')){const t=s.slice(7);if(t==='sports'&&!sportInCareer()){UI.view='school';UI.sub='athletics';return;}UI.view='career';UI.sub=t==='job'?'job':t;return;}
+  if(v==='assets'){const map={homes:'realestate',property:'realestate',garage:'vehicles',fleet:'fleet',collection:'collection'};if(map[s]){UI.view='assets';UI.sub=map[s];return;}}
+  return _route(v,s);};
+H.ctab=d=>{if(d.v==='sports'&&!sportInCareer()){UI.view='school';UI.sub='athletics';}else{UI.view='career';UI.sub=d.v;}if(d.q!=null)UI.jsq=d.q;UI.page=null;closeModal();render();window.scrollTo(0,0);};
+H.stab=d=>{UI.view='school';UI.sub=d.v;render();window.scrollTo(0,0);};
+H.asub=d=>{UI.view='assets';UI.sub=d.v==='overview'?null:d.v==='luxury'?'fleet':d.v;UI.page=null;render();window.scrollTo(0,0);};
+H.luxt=d=>{UI.view='assets';UI.sub=d.v;UI.page=null;render();window.scrollTo(0,0);};
+H.atab=d=>{route('assets',d.v);UI.page=null;closeModal();render();window.scrollTo(0,0);saveUI();};
+H.findq=d=>{UI.view='career';UI.sub='find';UI.jsq=d.q||'';UI.jcat=d.c||'all';UI.jq=d.only?1:0;render();window.scrollTo(0,0);};
+/* ---------- Occupation ---------- */
+function vCareer(){const m=M(),s=UI.sub;const back=subBack();
+  if(s==='job'){let h=cJob();if(m.job&&!JOBS[m.job.id].special)h=h.replace('<span>Performance</span>','<span>Pay schedule</span><b>Paid at the end of each year</b><span>Performance</span>');return panel('Your job',h,back);}
+  if(s==='find')return panel('Jobs',cFind(),back);if(s==='sports')return panel('Pro sports',cProSports(),back);if(s==='showbiz')return panel('Showbiz',cShowbiz(),back);
+  if(s==='politics')return panel('Politics',cPolitics(),back);if(s==='coach')return panel('Coaching',cCoach(),back);if(s==='history')return panel('Career history',cHistory(),back);
+  if(s==='gigs'){const l=ACTS.filter(a=>a.cat==='money'&&actAvail(a));return panel('Freelance gigs',card(l.length?`<div class="list">${l.map(a=>actRow(a)).join('')}</div>`:'<p class="empty">No gigs available right now.</p>'),back);}
+  if(s==='special')return panel('Special careers',specialCareers(),back);
+  if(!m.alive)return panel('Occupation',card('<p class="empty">This life has ended.</p>'));
+  if(m.prison)return panel('Occupation',pgrp('You',[li('lock','coral','Inmate',`${plural(m.prison,'year')} left on your sentence`,'go',{v:'activities',s:'all'})])+card('<p class="note">You lost your job when you were convicted. Prison activities are in Activities.</p>'));
+  const you=[];
+  if(m.job){const d=JOBS[m.job.id];const spec={actor:'showbiz',director:'showbiz',music:'showbiz',politics:'politics',coach:'coach'}[m.job.id];you.push(li('briefcase','blue',esc(careerLabel()),d.special?esc(d.track):`${money(salary(m.job))}/yr · ${plural(m.job.years,'year')}`,'ctab',{v:spec||'job'},{bar:d.special?undefined:m.job.perf}));}
+  if(m.school)you.push(li('cap','violet',esc(title()),`Grade ${m.school.grade}`,'go',{v:'school'},{bar:m.school.grade}));
+  if(m.sport&&sportInCareer()&&m.sport.stage!=='retired')you.push(li('trophy','sun',`${esc(SPORTS[m.sport.sp].n)} · ${STAGEN[m.sport.stage]}`,m.sport.team?esc(m.sport.team):'',"ctab",{v:'sports'},{bar:m.sport.r}));
+  if(!you.length)you.push(li('user','blue',m.age<15?'Too young to work':m.retired?'Retired':'Unemployed',m.age<15?'You can start working at 15':'Find something below','ctab',{v:'find'},{dis:m.age<15}));
+  const all=[li('cap','violet','Education','Go to school','go',{v:'school'}),li('dollar','mint','Freelance gigs','Make some quick money','ctab',{v:'gigs'},{dis:m.age<12}),
+   li('search','blue','Job recruiter','Only jobs you qualify for','findq',{only:1},{dis:m.age<15}),li('briefcase','blue','Jobs','Browse full-time job listings','findq',{},{dis:m.age<15}),
+   li('shield','teal','Military','Join the armed forces','findq',{q:'Private'},{dis:m.age<18}),li('clock','sun','Part-time jobs','Hourly work','findq',{c:'service'},{dis:m.age<15}),
+   li('star','violet','Special careers','Fame, sports, politics and more','ctab',{v:'special'}),li('clock','blue','Career history','Every job you’ve had','ctab',{v:'history'})];
+  return panel('Occupation',pgrp('You',you)+pgrp('All',all));}
+function specialCareers(){const m=M(),j=m.job;const rows=[
+  li('film','coral','Actor',j&&j.id==='actor'?esc(careerLabel()):'Auditions, roles and awards','ctab',{v:'showbiz'},{dis:m.age<6}),li('film','sun','Film director',j&&j.id==='director'?esc(careerLabel()):'Shorts to blockbusters','ctab',{v:'showbiz'},{dis:m.age<12}),
+  li('music','violet','Musician',j&&j.id==='music'?esc(careerLabel()):'Write songs, tour, get signed','ctab',{v:'showbiz'},{dis:m.age<8}),li('star','violet','Model','Become a famous supermodel','findq',{q:'Model'},{dis:m.age<16}),
+  li('smile','sun','Comedian','Open mics to arenas','findq',{q:'Comic'},{dis:m.age<16}),li('game','blue','Streamer','Go live, grow an audience','findq',{q:'Streamer'},{dis:m.age<13}),li('book','blue','Writer','Become a bestselling author','findq',{q:'Writer'},{dis:m.age<16}),
+  li('flag','blue','Politician','Run for office','ctab',{v:'politics'},{dis:m.age<12}),li('trophy','mint','Pro athlete',m.sport?`${esc(SPORTS[m.sport.sp].n)} · ${STAGEN[m.sport.stage]}`:'Make it to the pros','ctab',{v:'sports'}),
+  li('target','teal','Coach','Youth to the pros','ctab',{v:'coach'},{dis:m.age<16}),li('shield','coral','Street hustler','The Ninefold Crew (fictional)','go',{v:'activities',s:'risk'},{dis:m.age<16})];
+  return pgrp('',rows);}
+/* ---------- School ---------- */
+function vUni(){const m=M(),s=UI.sub,sc=m.school,back=subBack();const lab=schoolLabel();
+  if(s==='academics'){let h=stripTop(vSchool());if(!sc&&(m.age>=18||m.flags.schoolDone)){const ss=schoolSeasons();if(ss)h+=card(sh('School sports record')+ss);}return panel(sc?'Academics':'Education',h,back);}
+  if(s==='athletics')return panel(sc&&sc.stage==='high'?'High school athletics':sc&&['college','grad'].includes(sc.stage)?'College athletics':'Sports',uniAthletics(),back);
+  if(!m.alive)return panel(lab,card('<p class="empty">This life has ended.</p>'));
+  const you=[];if(sc)you.push(li('cap','violet',esc({elementary:'Elementary school',middle:'Middle school',high:`${city().n} High`,college:sc.tierName||'University',grad:`${sc.prog} program`}[sc.stage]),sc.major?`${esc(sc.major)} · year ${sc.years+1} of ${sc.len}`:'Grades, clubs and effort','stab',{v:'academics'},{bar:sc.grade}));
+  else you.push(li('cap','violet',m.age<5?'Not in school yet':'Education',m.age<5?'School starts at 5':[['No diploma','High school graduate','Bachelor’s degree','Graduate degree'][m.edu],...m.degrees.map(d=>d.type==='BA'?d.major:d.type)].join(' · '),'stab',{v:'academics'}));
+  const sp=m.sport;if(sp&&!sportInCareer())you.push(li('trophy','sun',`${esc(SPORTS[sp.sp].n)} · ${STAGEN[sp.stage]}`,sp.team?esc(sp.team):sp.college?esc(sp.college.name):'','stab',{v:'athletics'},{bar:sp.r}));
+  else if(!sp&&m.age>=5&&(sc||m.age<18))you.push(li('activity','mint',sc&&sc.stage==='high'?'High school athletics':sc&&['college','grad'].includes(sc.stage)?'College athletics':'Sports','Try out for a team','stab',{v:'athletics'}));
+  const all=[];if(sc){all.push(li('users','coral','Join a club','Make friends, build social skills','club',{}));if(['high','college','grad'].includes(sc.stage)&&(sc.stage!=='high'||m.age>=16))all.push(li('x','coral','Drop out','Leave school for good','dropout',{}));}
+  else if(m.age>=17){if(m.edu>=1)all.push(li('cap','violet','College','Apply for a bachelor’s degree','college',{}));if(m.edu>=2)all.push(li('award','violet','Graduate school','Medical, law, business, PhD and more','gradschool',{}));if(m.edu===0)all.push(li('book','blue','Study for a GED','Unlock more jobs','go',{v:'activities',s:'cat:learn'}));}
+  all.push(li('book','blue','Learning','Languages, coding, more','go',{v:'activities',s:'cat:learn'}));
+  if(sp&&sportInCareer()&&schoolSeasons())all.push(li('clock','blue','School sports record','Your stats before the pros','stab',{v:'athletics'}));
+  return panel(lab,pgrp('You',you)+pgrp('All',all));}
+/* ---------- Relationships ---------- */
+function vPeopleTop(){const m=M(),s=UI.sub,back=subBack();if(!m.alive)return panel('Relationships',card('<p class="empty">This life has ended.</p>'));
+  const pr=p=>li('','', `${esc(p.first)} ${esc(p.last)} <span class="rel">(${cap(relName(p))})</span>`,`Age ${p.age} · ${p.trait}${p.job?' · '+esc(p.job):''}`,'person',{id:p.id},{lead:`<span class="li-av">${portrait(p.ap,p.age,p.g,p.bond)}</span>`,bar:p.bond});
+  const dead=p=>li('','',`${esc(p.first)} ${esc(p.last)} <span class="rel">(${cap(relName(p))})</span>`,`Died ${p.died?S.year-p.died+' years ago':''} at ${p.age}`,'close',{},{lead:`<span class="li-av dim">${portrait(p.ap,p.age,p.g,50)}</span>`,right:''});
+  const grp=rels=>S.people.filter(p=>p.alive&&rels.includes(p.rel));
+  if(s==='exes')return panel('Exes',pgrp('',grp(['ex']).map(pr))||card('<p class="empty">No exes.</p>'),back);
+  const meet=[];if(m.age>=18&&!m.prison)meet.push(li('heart','coral','Find a date','Meet someone new','dating',{},{dis:!!partner()&&partner().rel!=='partner'}));
+  if(m.age>=25&&!m.prison)meet.push(li('users','violet','Adopt a child',`Agency fees ${money(35e3)}`,'adopt',{},{dis:m.cash<35e3}));
+  const fam=S.people.filter(p=>p.alive&&['mother','father','sibling','child','spouse','partner','fiance'].includes(p.rel));if(fam.length)meet.push(li('smile','sun','Spend time with everyone','Family and loved ones','timeall',{}));
+  const pets=(m.pets||[]).map(n=>li('heart','mint',esc(n),'Your pet','petplay',{n},{right:'Play'}));
+  const exes=grp(['ex']);
+  const late=S.people.filter(p=>!p.alive&&['mother','father','sibling','child','spouse'].includes(p.rel));
+  return panel('Relationships',pgrp('Meet people',meet)+pgrp('Love',[...grp(['spouse','fiance','partner']).map(pr),...(exes.length?[li('heart','coral','Exes',`${plural(exes.length,'ex')}`,'go',{v:'people',s:'exes'})]:[])])+pgrp('Parents',grp(['mother','father']).map(pr))+pgrp('Siblings',grp(['sibling']).map(pr))+pgrp('Children',grp(['child']).map(pr))
+   +pgrp('Pets',pets)+pgrp('Friends',grp(['friend']).map(pr))+pgrp('Rivals',grp(['rival']).map(pr))+pgrp('Late relationships',late.map(dead))+(S.people.some(p=>p.alive&&p.rel==='friend')?'':card('<p class="empty">Meet friends by going out, playing sports, joining clubs and exploring.</p>')));}
+H.timeall=()=>{const m=M();S.done=S.done||{};const n=S.done.timeall||0;S.done.timeall=n+1;const g=Math.max(1,Math.round(6/(1+n)));S.people.filter(p=>p.alive&&['mother','father','sibling','child','spouse','partner','fiance'].includes(p.rel)).forEach(p=>{p.bond=clamp(p.bond+g);p.seen=S.year;});sAdd('happy',Math.max(1,4-n));note(n?'You spent more time with your family.':'You spent quality time with everyone you love.');render();};
+H.petplay=d=>{S.done=S.done||{};const n=S.done['pet'+d.n]||0;S.done['pet'+d.n]=n+1;DIM=1/(1+.5*n);sAdd('happy',4);sAdd('stress',-3);DIM=1;note(`You played with ${d.n}. ${pick(['Tail wags all around.','Best friend energy.','Pure joy.','They demanded more treats.'])}`);render();};
+/* ---------- Activities ---------- */
+function vActivitiesHub(){const m=M(),s=UI.sub,back=subBack();
+  if(s==='skills')return panelize(vSkills(),'Skills & practice',back);if(s&&s.startsWith('cat:'))return panelize(vActCat(s.slice(4)),'',back);if(s==='all')return panelize(vActivities(),'',back);
+  if(s==='risk')return panelize(vRisk(),'',back);if(s==='travel')return panelize(vTravel(),'',back);if(s&&s.startsWith('place:'))return panelize(vPlace(s.slice(6)),'',{v:'activities',s:'town'});
+  if(s==='local')return panel(`Only in ${city().n}`,localSpotsHTML()||card('<p class="empty">Nothing special here.</p>'),back);
+  if(s==='town')return panel(`Around ${city().n}`,pgrp('',PLACES.filter(p=>m.age>=p.min).map(p=>li(p.i,p.c,p.n,p.d,'go',{v:'activities',s:'place:'+p.id}))),back);
+  if(!m.alive)return panel('Activities',card('<p class="empty">This life has ended.</p>'));
+  if(m.prison)return panelize(vActivities(),'Prison life');
+  const favs=(S.favs||[]).map(id=>ACTS.find(a=>a.id===id)).filter(a=>a&&actAvail(a)).map(a=>li(a.i,a.c,a.n,a.d,'act',{id:a.id},{right:a.price&&a.price()?money(a.price()):'Do it'}));
+  const pop=[li('star','sun','Skills & practice','Vocals, sports, acting, coding…','go',{v:'activities',s:'skills'}),li('heart','coral','Love','Find someone to love','go',{v:'people'}),li('activity','mint','Mind & body','Gym, meditate, doctor','go',{v:'activities',s:'cat:health'}),
+   li('game','violet','Hobbies','Music, art, games','go',{v:'activities',s:'cat:hobby'}),li('users','coral','Social life','Go out, volunteer','go',{v:'activities',s:'cat:social'}),li('book','blue','Learning','Languages, coding, GED','go',{v:'activities',s:'cat:learn'})];
+  const out=[];if(m.age>=5)out.push(li('compass','teal','Around town','Parks, gym, mall, more','go',{v:'activities',s:'town'}));const loc=LOCALACT.filter(x=>hasTag(city(),x[0])&&m.age>=(x[6]||8));if(loc.length)out.push(li('pin','teal',`Only in ${esc(city().n)}`,loc.map(x=>LTAG[x[0]]).slice(0,3).join(', '),'go',{v:'activities',s:'local'}));
+  if(m.age>=16)out.push(li('plane','teal','Travel','Trips near and far','go',{v:'activities',s:'travel'}));if(m.age>=18)out.push(li('globe','blue','Emigrate','Move to another city or country','go',{v:'life',s:'move'}));
+  if(m.age>=18)out.push(li('dice','sun','Casino','Try your luck','go',{v:'activities',s:'place:casino'}));if(m.age>=12)out.push(li('bag','violet','Shopping','Clothes, makeovers','go',{v:'activities',s:'place:mall'}));
+  if(m.age>=12)out.push(li('gem','violet','Luxury','Watches, art, experiences','luxt',{v:'collection'}));if(m.age>=12)out.push(li('shield','coral','Crime','Fictional, and costly','go',{v:'activities',s:'risk'}));
+  return panel('Activities',`<div class="search">${icon('search')}<input type="text" id="actsearch" placeholder="Search: gym, guitar, beach…" value="${esc(UI.q)}" aria-label="Search activities"></div><div id="searchres">${searchHTML(UI.q)}</div>`+pgrp('Favorites',favs)+pgrp('Popular',pop)+pgrp('Out & about',out));}
+/* ---------- Assets ---------- */
+function vAssets(){const m=M(),s=UI.sub,back=subBack();
+  if(s==='realestate'){let h=aHomes();const R=S.re;if(R&&(R.props.length||R.proj.length))h+=pgrp(`${R.co?R.co.name:'Company'} properties`,R.props.map(p=>li('building','violet',esc(p.name),`${esc(RT[p.type][0])} · ${esc(CITIES[p.ci].n)} · ${money(propVal(p))}`,'rprop',{id:p.id},{bar:p.cond})));return panel('Real estate',h,back);}
+  if(s==='vehicles')return panel('Cars & motorcycles',aGarage(),back);if(s==='fleet')return panel('Boats & aircraft',aFleet(),back);if(s==='collection')return panel('Belongings',aCollection(),back);
+  if(s==='shop')return panel('Go shopping',pgrp('',[li('home','mint','Homes for sale',`Listings in ${esc(city().n)}`,'asub',{v:'realestate'},{dis:m.age<18}),li('building','sun','Build a home','Design it from the ground up','bhstart',{},{dis:m.age<18}),
+    li('car','teal','Car dealership','Everyday to hypercars','dlr',{v:'everyday'},{dis:m.age<16}),li('car','coral','Motorcycles','Scooters to superbikes','dlr',{v:'moto'},{dis:m.age<16}),li('anchor','teal','Boat dealer','Jet skis to gigayachts','asub',{v:'fleet'},{dis:m.age<18}),
+    li('plane','blue','Aircraft dealer','Trainers to VIP airliners','asub',{v:'fleet'},{dis:m.age<18}),li('gem','violet','Luxury & collectibles','Watches, art, cards, experiences','asub',{v:'collection'},{dis:m.age<12}),li('building','violet','Real estate empire','Apartments, malls, skyscrapers','go',{v:'business',s:'empire'},{dis:m.age<18})]),back);
+  if(!m.alive)return panel('Assets',card('<p class="empty">This life has ended.</p>'));
+  const R=S.re;const re=[...homes().map(a=>li('home','mint',esc(a.name),`${esc(a.addr||'')} · ${money(a.value)}${a.home?' · home':a.rented?' · rented':''}`,'hopen',{id:a.id},{bar:a.cond})),...(S.builds||[]).map(b=>li('building','sun',esc(b.spec.name),`Under construction · ${Math.round(b.prog/b.years*100)}%`,'asub',{v:'realestate'})),
+    ...(R&&R.props.length?[li('building','violet',esc(R.co?R.co.name:'Company'),`${plural(R.props.length,'property','properties')} · ${money(R.props.reduce((t,p)=>t+propVal(p),0))}`,'go',{v:'business',s:'empire'})]:[])];
+  const veh=S.assets.filter(isCar).map(a=>li('car','teal',`${a.fav?'★ ':''}${esc(a.name)}`,`${money(a.value)} · ${a.miles.toLocaleString()} mi`,'carpage',{id:a.id},{bar:a.cond}));
+  const fl=S.assets.filter(a=>isBoat(a)||isAir(a)).map(a=>li(isBoat(a)?'anchor':'plane','blue',esc(a.name),money(a.value),isBoat(a)?'boatpage':'airpage',{id:a.id},{bar:a.cond}));
+  const col=S.assets.filter(isCol);const poss=col.length?[li('gem','violet','Belongings',`${plural(col.length,'item')} · ${money(col.reduce((t,a)=>t+a.value,0))}`,'asub',{v:'collection'})]:[];
+  const empty=!re.length&&!veh.length&&!fl.length&&!poss.length;
+  return panel('Assets',(empty?card(`<p class="empty">${m.age<12?'You don’t own anything yet. Your parents have everything covered.':'You don’t own anything yet.'}</p>`):'')+pgrp('Real estate',re)+pgrp('Vehicles',veh)+pgrp('Boats & aircraft',fl)+pgrp('Possessions',poss)+`<div class="shopbtn">${B(icon('bag')+'Go shopping…','asub',{v:'shop'},{cls:'btn pri big'})}</div>`);}
+H.dlr=d=>{UI.view='assets';UI.sub='vehicles';UI.cc=d.v;UI.cn=12;UI.page=null;render();window.scrollTo(0,0);};
+/* ---------- Money / Business / More ---------- */
+const _vMoney=vMoney;vMoney=function(){return panelize(_vMoney().replace(/^<div class="crumb">.*?<\/div><\/div>|^<div class="crumb">[\s\S]*?<\/b><\/div>/,''),'Money');};
+const _vBusiness=vBusiness;vBusiness=function(){if(UI.sub==='empire'){UI.bt='empire';UI.sub=null;}return panelize(_vBusiness().replace(/^<div class="crumb">[\s\S]*?<\/b><\/div>/,''),'Business');};
+const _vMore=vMore;vMore=function(){const s=UI.sub;const h=_vMore();if(s)return panelize(h,'',{v:'more'});return panelize(h.replace(/^<div class="crumb">[\s\S]*?<\/b><\/div>/,''),'Menu');};
+/* ---------- more alerts ---------- */
+const ALERT_AW=(sp,n,wt)=>{const D=SPORTS[sp.sp];if(wt<2||n.includes(D.champ))return;const big=wt>=4;celebrate(big?`You won the ${n}!`:n.endsWith('champions')?`${n}!`:`${n}!`,`${D.n} · ${S.year}${sp.team?' · '+sp.team:sp.college?' · '+sp.college.name:''}`,'trophy',big?'sun':'blue');};
 
 
 document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el||el.disabled)return;const f=H[el.dataset.a];if(!f)return;
